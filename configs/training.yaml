@@ -1,0 +1,13 @@
+# Hyperparamètres d'entraînement
+
+batch_size: 8
+num_epochs: 100
+optimizer: "adamw"
+learning_rate: 2e-4
+weight_decay: 1e-4
+scheduler: "cosine"
+warmup_epochs: 5
+num_workers: 4
+device: "cuda"
+checkpoint_every_n_epochs: 5
+seed: 42

@@ -1,0 +1,7 @@
+# Sources des jeux de données. Ajouter une entrée pour chaque nouveau dataset.
+
+datasets:
+  visdrone:
+    url: ""
+    archive_name: "visdrone.zip"
+    output_dir: "data/raw/visdrone"

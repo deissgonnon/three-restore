@@ -1,0 +1,19 @@
+# Méthodes de référence — voir doc de suivi section 6.2
+# Chaque entrée doit pointer vers des poids pré-entraînés ou un script de reproduction.
+
+baselines:
+  degraded_input:
+    type: "passthrough"
+
+  task_specific:
+    dehaze: {name: "TBD", weights_path: null}
+    derain: {name: "TBD", weights_path: null}
+    lowlight_enhance: {name: "TBD", weights_path: null}
+
+  all_in_one:
+    airnet: {weights_path: null}
+    promptir: {weights_path: null}
+    moce_ir: {weights_path: null}
+
+  general_restoration:
+    restormer: {weights_path: null}

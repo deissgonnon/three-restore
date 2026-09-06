@@ -1,0 +1,82 @@
+"""Pipeline generating degraded images (fog, rain, lowlight) from clear image."""
+
+import numpy as np
+from .fog import FogGenerator
+from .rain import RainGenerator
+from .lowlight import LowlightGenerator
+
+
+class DegradationPipeline:
+    """Orchestrates fog, rain, and lowlight degradation with randomizable parameters."""
+
+    def __init__(self, config: dict):
+        self.config = config
+        self.fog_gen = FogGenerator(depth_model=config.get("fog", {}).get("depth_model"))
+        self.rain_gen = RainGenerator()
+        self.lowlight_gen = LowlightGenerator()
+
+    def _sample_param(self, param_range: list, seed: int) -> float:
+        """Sample uniformly from param_range."""
+        rng = np.random.default_rng(seed)
+        return float(rng.uniform(param_range[0], param_range[1]))
+
+    def apply_fog(self, image: np.ndarray, seed: int = None) -> np.ndarray:
+        """Apply fog with random parameters from config range."""
+        if not self.config.get("fog", {}).get("enable", False):
+            return image
+        
+        seed = seed or self.config.get("seed_base", 42)
+        cfg = self.config["fog"]
+        
+        strength = self._sample_param(cfg["strength_range"], seed)
+        heterogeneity = self._sample_param(cfg["heterogeneity_range"], seed + 1)
+        
+        return self.fog_gen.apply(image, strength=strength, heterogeneity=heterogeneity, seed=seed + 2)
+
+    def apply_rain(self, image: np.ndarray, seed: int = None) -> np.ndarray:
+        """Apply a randomly selected notebook rain profile."""
+        if not self.config.get("rain", {}).get("enable", False):
+            return image
+        
+        seed = seed or self.config.get("seed_base", 42)
+        cfg = self.config["rain"]
+        rain_types = cfg.get("rain_types", list(RainGenerator.RAIN_TYPES))
+        rain_type = rain_types[np.random.default_rng(seed).integers(0, len(rain_types))]
+
+        return self.rain_gen.apply(image, rain_type=rain_type, seed=seed)
+
+    def apply_lowlight(self, image: np.ndarray, seed: int = None) -> np.ndarray:
+        """Apply lowlight with random parameters from config range."""
+        if not self.config.get("lowlight", {}).get("enable", False):
+            return image
+        
+        seed = seed or self.config.get("seed_base", 42)
+        cfg = self.config["lowlight"]
+        
+        brightness_limit = self._sample_param(cfg["brightness_limit_range"], seed)
+        contrast_limit = self._sample_param(cfg["contrast_limit_range"], seed + 1)
+        shot_noise = self._sample_param(cfg["shot_noise_range"], seed + 2)
+        saturation = self._sample_param(cfg["saturation_range"], seed + 3)
+        
+        return self.lowlight_gen.apply_with_range(
+            image,
+            brightness_limit=(brightness_limit, brightness_limit),
+            contrast_limit=(contrast_limit, contrast_limit),
+            shot_noise_scale=shot_noise,
+            saturation=saturation,
+            seed=seed
+        )
+
+    def apply_all(self, image: np.ndarray, seed: int = None) -> dict:
+        """Apply all enabled degradations, return dict with degradation_type -> image."""
+        seed = seed or self.config.get("seed_base", 42)
+        results = {"clear": image}
+        
+        if self.config.get("fog", {}).get("enable", False):
+            results["fog"] = self.apply_fog(image, seed=seed + 100)
+        if self.config.get("rain", {}).get("enable", False):
+            results["rain"] = self.apply_rain(image, seed=seed + 200)
+        if self.config.get("lowlight", {}).get("enable", False):
+            results["lowlight"] = self.apply_lowlight(image, seed=seed + 300)
+        
+        return results

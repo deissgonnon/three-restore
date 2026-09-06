@@ -1,0 +1,23 @@
+fog:
+  enable: true
+  depth_model: "depth-anything/Depth-Anything-V2-Small-hf"
+  strength_range: [0.10, 0.95]
+  heterogeneity_range: [0.06, 0.25]
+  blur_sigma: 1.5
+
+rain:
+  enable: true
+  rain_types: [drizzle, default, heavy, torrential]
+
+lowlight:
+  enable: true
+  brightness_limit_range: [-0.85, -0.2]
+  contrast_limit_range: [-0.4, -0.1]
+  shot_noise_range: [0.0, 0.4]
+  saturation_range: [0.4, 1.0]
+
+noise:
+  enable: false
+  gaussian_std_range: [0.01, 0.05]
+
+seed_base: 42

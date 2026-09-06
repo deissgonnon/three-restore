@@ -1,0 +1,15 @@
+# Chemins centralisés du projet — ne jamais coder un chemin en dur ailleurs.
+
+data:
+  raw_visdrone: "data/raw/visdrone"
+  synthetic_fog: "data/synthetic/fog"
+  synthetic_rain: "data/synthetic/rain"
+  synthetic_lowlight: "data/synthetic/lowlight"
+  splits_dir: "data/splits"
+  real_lowlight_test: "data/real_lowlight_test"
+
+outputs:
+  checkpoints: "outputs/checkpoints"
+  figures: "outputs/figures"
+  logs: "logs"
+  experiments: "experiments"

@@ -1,0 +1,14 @@
+# Architecture du réseau de restauration et de la branche DEP
+
+restoration_backbone:
+  name: "dep_rnet"
+  in_channels: 3
+  out_channels: 3
+  base_channels: 64
+  num_blocks: 4
+
+dep_branch:
+  enabled: true
+  channels: 32
+  num_layers: 3
+  # Objectif : améliorer contours véhicules/piétons, contraste local, hautes fréquences

@@ -1,0 +1,10 @@
+# Pondérations des différentes composantes de la perte totale
+
+weights:
+  l1: 1.0
+  perceptual: 0.1
+  sod_loss: 0.5     # Scale-aware Object Detail Loss — supervision renforcée petits objets
+
+sod_loss:
+  small_object_scale_threshold: 32  # pixels — seuil définissant une "petite zone"
+  boost_factor: 2.0                  # facteur de renforcement de la supervision

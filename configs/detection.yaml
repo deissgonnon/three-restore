@@ -1,0 +1,16 @@
+# Détecteur fixe utilisé pour toutes les évaluations (image nette / dégradée / restaurée)
+# afin d'isoler l'effet du module de restauration — voir doc de suivi section 6.4
+
+detector:
+  name: "yolov8"
+  weights: "yolov8n.pt"
+  confidence_threshold: 0.25
+  iou_threshold: 0.45
+
+metrics:
+  - mAP50
+  - mAP50_95
+  - AP_vehicle
+  - AP_pedestrian
+  - recall
+  - AP_small_objects

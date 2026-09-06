@@ -1,0 +1,22 @@
+# Classes cibles et règles de filtrage — voir doc de suivi section 5.2
+
+target_classes:
+  - pedestrian
+  - person
+  - car
+  - van
+  - bus
+  - truck
+  - motor  # inclus si nécessaire dans la catégorie véhicule
+
+grouped_categories:
+  vehicle: [car, van, bus, truck, motor]
+  pedestrian: [pedestrian, person]
+
+splits:
+  # Ratios indicatifs — la répartition réelle doit être figée dans data/splits/
+  # et ne plus être modifiée d'une expérience à l'autre.
+  train: 0.7
+  val: 0.15
+  test: 0.15
+  seed: 42

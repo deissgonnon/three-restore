@@ -1,0 +1,29 @@
+# Données (trop volumineuses pour git, sauf splits/)
+data/raw/
+data/synthetic/
+data/real_lowlight_test/
+!data/splits/
+
+# Sorties d'entraînement
+outputs/
+logs/
+experiments/*/
+!experiments/.gitkeep
+
+# Secrets
+configs/secrets.yaml
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

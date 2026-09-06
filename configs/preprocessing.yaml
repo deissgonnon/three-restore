@@ -1,0 +1,7 @@
+day_night_classifier:
+  enable: true
+  model_name: "facebook/sam3"
+  prompt: "photo taken at night"
+  presence_threshold: 0.3
+  cache_dir: "data/preprocessing_cache"
+  batch_size: 8
