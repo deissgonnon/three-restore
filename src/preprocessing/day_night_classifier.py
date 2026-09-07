@@ -7,6 +7,7 @@ import torch
 import yaml
 from PIL import Image
 from transformers import Sam3Model, Sam3Processor
+from tqdm import tqdm
 
 
 class DayNightClassifier:
@@ -69,7 +70,7 @@ class DayNightClassifier:
             if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
         )
 
-        for image_path in image_paths:
+        for image_path in tqdm(image_paths, desc=f"Classification {split_name}"):
             with Image.open(image_path) as image:
                 destination = (
                     night_dir / split_name
