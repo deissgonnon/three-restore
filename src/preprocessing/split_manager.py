@@ -1,4 +1,4 @@
-"""Gestion des splits train/val/test figés (doc de suivi section 5.3).
+"""Gestion des splits train/val/test figés
 
 Les splits, une fois générés, sont sauvegardés dans data/splits/ et ne
 doivent plus être modifiés d'une expérience à l'autre.

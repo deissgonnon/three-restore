@@ -1,57 +1,102 @@
-"""Classification jour/nuit via SAM3 (facebook/sam3 + vision-language)."""
+"""Classe les images VisDrone en jour et nuit."""
 
-import numpy as np
+import shutil
+from pathlib import Path
+
 import torch
+import yaml
 from PIL import Image
-from transformers import Sam3Processor, Sam3Model
+from transformers import Sam3Model, Sam3Processor
 
 
 class DayNightClassifier:
-    """Classifie images en jour/nuit via SAM3 presence score."""
+    """Classe les images et conserve leurs annotations associées."""
 
-    def __init__(self, model_name: str = "facebook/sam3", prompt: str = "photo taken at night", 
-                 threshold: float = 0.3, device: str = None):
-        self.model_name = model_name
+    def __init__(
+        self,
+        model_name: str = "facebook/sam3",
+        prompt: str = "photo taken at night",
+        threshold: float = 0.3,
+        device: str | None = None,
+    ):
         self.prompt = prompt
         self.threshold = threshold
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.processor = None
-        self.model = None
+        self.processor = Sam3Processor.from_pretrained(model_name)
+        self.model = Sam3Model.from_pretrained(model_name).to(self.device).eval()
 
-    def _load_model(self):
-        if self.processor is None:
-            self.processor = Sam3Processor.from_pretrained(self.model_name)
-            self.model = Sam3Model.from_pretrained(self.model_name).to(self.device).eval()
-
-    def classify(self, image: Image.Image) -> dict:
-        """Classify single image. Returns dict with presence_score and label."""
-        self._load_model()
-        
-        inputs = self.processor(images=image, text=self.prompt, return_tensors="pt").to(self.device)
+    def is_night(self, image: Image.Image) -> bool:
+        """Retourne True si l'image est classée comme image de nuit."""
+        inputs = self.processor(
+            images=image, text=self.prompt, return_tensors="pt"
+        ).to(self.device)
         with torch.no_grad():
             outputs = self.model(**inputs)
-            presence_score = torch.sigmoid(outputs.presence_logits).item()
-        
-        label = "night" if presence_score >= self.threshold else "day"
-        return {
-            "presence_score": presence_score,
-            "label": label,
-            "prompt": self.prompt
-        }
+        score = torch.sigmoid(outputs.presence_logits).item()
+        return score >= self.threshold
 
-    def classify_batch(self, image_paths: list, batch_size: int = 8) -> list:
-        """Classify multiple images."""
-        results = []
-        for i in range(0, len(image_paths), batch_size):
-            batch_paths = image_paths[i:i + batch_size]
-            for path in batch_paths:
-                img = Image.open(path).convert("RGB")
-                result = self.classify(img)
-                result["path"] = path
-                results.append(result)
-        return results
+    def _copy_image_and_annotation(
+        self,
+        image_path: Path,
+        images_dir: Path,
+        annotations_dir: Path,
+        destination: Path,
+    ) -> None:
+        relative_path = image_path.relative_to(images_dir)
+        output_image = destination / "images" / relative_path
+        output_image.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(image_path, output_image)
+
+        annotation = annotations_dir / relative_path.with_suffix(".txt")
+        if annotation.exists():
+            output_annotation = destination / "annotations" / relative_path.with_suffix(".txt")
+            output_annotation.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(annotation, output_annotation)
+
+    def process_split(
+        self,
+        split_dir: Path,
+        split_name: str,
+        day_dir: Path,
+        night_dir: Path,
+    ) -> None:
+        """Classe un split et copie chaque annotation avec son image."""
+        images_dir = split_dir / "images"
+        annotations_dir = split_dir / "annotations"
+        image_paths = sorted(
+            path
+            for path in images_dir.rglob("*")
+            if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+        )
+
+        for image_path in image_paths:
+            with Image.open(image_path) as image:
+                destination = (
+                    night_dir / split_name
+                    if self.is_night(image)
+                    else day_dir / split_name
+                )
+            self._copy_image_and_annotation(
+                image_path, images_dir, annotations_dir, destination
+            )
+
+        print(f"{split_name}: {len(image_paths)} images classées")
 
 
-def classify_day_night(scores, threshold: float = DEFAULT_THRESHOLD):
-    """Labellise chaque image 'jour' ou 'nuit' selon le seuil de score."""
-    raise NotImplementedError
+def main() -> None:
+    dataset_name = "visdrone"
+    with Path("configs/datasets.yaml").open(encoding="utf-8") as config_file:
+        dataset = yaml.safe_load(config_file)["datasets"][dataset_name]
+
+    classifier = DayNightClassifier()
+    for split_name in ("train", "val", "test"):
+        classifier.process_split(
+            split_dir=Path(dataset[f"{split_name}_dir"]),
+            split_name=split_name,
+            day_dir=Path("data/splits"),
+            night_dir=Path("data/real_lowlight_test"),
+        )
+
+
+if __name__ == "__main__":
+    main()

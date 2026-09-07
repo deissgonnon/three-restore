@@ -55,20 +55,14 @@ pip install -r requirements.txt
 
 ## Télécharger un jeu de données
 
-Les sources sont déclarées dans `configs/datasets.yaml`. Pour télécharger VisDrone,
-renseigner son URL puis lancer :
+Les jeux de données sont définis dans `configs/datasets.yaml`. Le script reconnaît
+les URL Kaggle, Hugging Face, Google Drive et les URL directes d'archives :
 
 ```bash
-python scripts/download_dataset.py --dataset visdrone
+python scripts/download_dataset.py
 ```
 
-Une URL ponctuelle et un dossier de sortie peuvent aussi être fournis sans modifier
-la configuration :
-
-```bash
-python scripts/download_dataset.py --dataset visdrone \
-  --url "URL_DE_L_ARCHIVE" --output-dir data/raw/visdrone
-```
+Pour changer de dataset, modifier uniquement `dataset_name` dans la fonction `main`.
 
 ## Lancer les tests
 

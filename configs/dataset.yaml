@@ -12,11 +12,3 @@ target_classes:
 grouped_categories:
   vehicle: [car, van, bus, truck, motor]
   pedestrian: [pedestrian, person]
-
-splits:
-  # Ratios indicatifs — la répartition réelle doit être figée dans data/splits/
-  # et ne plus être modifiée d'une expérience à l'autre.
-  train: 0.7
-  val: 0.15
-  test: 0.15
-  seed: 42

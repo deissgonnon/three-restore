@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Télécharge et extrait un jeu de données déclaré dans la configuration."""
+"""Télécharge et extrait un jeu de données depuis une URL."""
 
-import argparse
-import hashlib
+import shutil
 import tarfile
+import tempfile
+import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -14,25 +15,6 @@ import yaml
 def load_config(config_path: Path) -> dict:
     with config_path.open(encoding="utf-8") as config_file:
         return yaml.safe_load(config_file) or {}
-
-
-def download_file(url: str, destination: Path) -> None:
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    print(f"Téléchargement : {url}")
-    urllib.request.urlretrieve(url, destination)
-
-
-def verify_checksum(file_path: Path, expected: str | None) -> None:
-    if not expected:
-        return
-
-    digest = hashlib.sha256()
-    with file_path.open("rb") as archive:
-        for block in iter(lambda: archive.read(1024 * 1024), b""):
-            digest.update(block)
-    actual = digest.hexdigest()
-    if actual != expected:
-        raise ValueError(f"SHA-256 invalide pour {file_path}: {actual}")
 
 
 def extract_archive(archive_path: Path, output_dir: Path) -> None:
@@ -50,45 +32,87 @@ def extract_archive(archive_path: Path, output_dir: Path) -> None:
     raise ValueError(f"Format d'archive non supporté : {archive_path}")
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--dataset", required=True, help="Nom déclaré dans configs/datasets.yaml")
-    parser.add_argument("--config", type=Path, default=Path("configs/datasets.yaml"))
-    parser.add_argument("--url", help="Remplace l'URL de la configuration")
-    parser.add_argument("--output-dir", type=Path, help="Remplace le dossier d'extraction")
-    parser.add_argument("--archive", type=Path, help="Chemin local d'une archive déjà téléchargée")
-    parser.add_argument("--keep-archive", action="store_true")
-    return parser.parse_args()
+def download_dataset(url: str, download_dir: Path) -> Path | None:
+    parsed_url = urllib.parse.urlparse(url)
+    host = parsed_url.netloc.lower()
+    parts = [part for part in parsed_url.path.split("/") if part]
+
+    if host.endswith("kaggle.com") and "datasets" in parts:
+        try:
+            import kagglehub
+        except ImportError as error:
+            raise SystemExit("Installez kagglehub pour télécharger depuis Kaggle.") from error
+
+        dataset_index = parts.index("datasets")
+        dataset_id = "/".join(parts[dataset_index + 1 : dataset_index + 3])
+        if dataset_id.count("/") != 1:
+            raise ValueError("URL Kaggle attendue : https://www.kaggle.com/datasets/<owner>/<dataset>")
+        print(f"Téléchargement Kaggle : {dataset_id}")
+        return Path(kagglehub.dataset_download(dataset_id))
+
+    if host in {"huggingface.co", "hf.co"} and parts and parts[0] == "datasets":
+        try:
+            from huggingface_hub import snapshot_download
+        except ImportError as error:
+            raise SystemExit("Installez huggingface_hub pour télécharger depuis Hugging Face.") from error
+
+        repo_id = "/".join(parts[1:3])
+        if repo_id.count("/") != 1:
+            raise ValueError(
+                "URL Hugging Face attendue : https://huggingface.co/datasets/<owner>/<dataset>"
+            )
+        print(f"Téléchargement Hugging Face : {repo_id}")
+        return Path(
+            snapshot_download(repo_id=repo_id, repo_type="dataset", local_dir=download_dir)
+        )
+
+    if host == "drive.google.com":
+        try:
+            import gdown
+        except ImportError as error:
+            raise SystemExit("Installez gdown pour télécharger depuis Google Drive.") from error
+
+        if "folders" in parts:
+            print(f"Téléchargement du dossier Google Drive : {url}")
+            gdown.download_folder(url, output=str(download_dir), quiet=False)
+            return None
+        archive_path = download_dir / "google-drive-download"
+        print(f"Téléchargement Google Drive : {url}")
+        gdown.download(url, output=str(archive_path), fuzzy=True, quiet=False)
+        return archive_path
+
+    archive_path = download_dir / "dataset-download"
+    print(f"Téléchargement : {url}")
+    urllib.request.urlretrieve(url, archive_path)
+    return archive_path
 
 
 def main() -> None:
-    args = parse_args()
-    datasets = load_config(args.config).get("datasets", {})
-    if args.dataset not in datasets:
+    dataset_name = "visdrone"
+    datasets = load_config(Path("configs/datasets.yaml")).get("datasets", {})
+    if dataset_name not in datasets:
         available = ", ".join(sorted(datasets)) or "aucun"
-        raise SystemExit(f"Dataset inconnu : {args.dataset}. Disponibles : {available}")
+        raise SystemExit(f"Dataset inconnu : {dataset_name}. Disponibles : {available}")
 
-    dataset_config = datasets[args.dataset]
-    output_dir = args.output_dir or Path(dataset_config["output_dir"])
-    archive_path = args.archive
-    downloaded = archive_path is None
+    dataset_config = datasets[dataset_name]
+    url = dataset_config.get("url")
+    if not url:
+        raise SystemExit(f"Aucune URL configurée pour {dataset_name}.")
+    output_dir = Path(dataset_config["output_dir"])
 
-    if archive_path is None:
-        url = args.url or dataset_config.get("url")
-        if not url:
-            raise SystemExit(
-                f"Aucune URL pour {args.dataset}. Ajoutez-la dans {args.config} ou utilisez --url."
-            )
-        archive_path = Path(dataset_config.get("archive_name", f"{args.dataset}.archive"))
-        download_file(url, archive_path)
+    with tempfile.TemporaryDirectory() as temporary_dir:
+        download_dir = Path(temporary_dir)
+        source = download_dataset(url, download_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        if source is None or source.is_dir():
+            source_dir = source or download_dir
+            print(f"Copie : {source_dir} -> {output_dir}")
+            shutil.copytree(source_dir, output_dir, dirs_exist_ok=True)
+        else:
+            print(f"Extraction : {source} -> {output_dir}")
+            extract_archive(source, output_dir)
 
-    verify_checksum(archive_path, dataset_config.get("sha256"))
-    print(f"Extraction : {archive_path} -> {output_dir}")
-    extract_archive(archive_path, output_dir)
-
-    if downloaded and not args.keep_archive:
-        archive_path.unlink()
-    print(f"Dataset disponible dans : {output_dir}")
+    print(f"Dataset {dataset_name} disponible dans : {output_dir}")
 
 
 if __name__ == "__main__":

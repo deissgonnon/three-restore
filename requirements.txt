@@ -12,5 +12,7 @@ tqdm
 pytest
 transformers
 huggingface_hub
+kagglehub
+gdown
 lpips
 ultralytics
