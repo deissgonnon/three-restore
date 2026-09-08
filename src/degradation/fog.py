@@ -55,20 +55,26 @@ class FogGenerator:
         sigma2 = max(50, min(h, w) / 5)
         noise2 = cv2.GaussianBlur(noise2, (0, 0), sigmaX=sigma2)
         noise2 = (noise2 - noise2.min()) / (noise2.max() - noise2.min() + 1e-8)
+        print(f"Fog field noise stats: min={noise.min():.4f}, max={noise.max():.4f}, mean={noise.mean():.4f}, std={noise.std():.4f}")
+        print(f"Fog field noise2 stats: min={noise2.min():.4f}, max={noise2.max():.4f}, mean={noise2.mean():.4f}, std={noise2.std():.4f}")
 
         field = 0.70 * noise + 0.30 * noise2
+        print(f"Fog field combined stats: min={field.min():.4f}, max={field.max():.4f}, mean={field.mean():.4f}, std={field.std():.4f}")
         field -= field.mean()
         field /= (np.std(field) + 1e-8)
+        print(f"Fog field normalized stats: min={field.min():.4f}, max={field.max():.4f}, mean={field.mean():.4f}, std={field.std():.4f}")
         field = 1.0 + heterogeneity * field
+        # On verifie si le cip coupe assez de valeurs 
+        print(f"Fog field stats: min={field.min():.4f}, max={field.max():.4f}, mean={field.mean():.4f}, std={field.std():.4f}")
         field = np.clip(field, 1.0 - 1.5 * heterogeneity, 1.0 + 1.5 * heterogeneity)
         return field.astype(np.float32)
 
     def _density_map(self, depth: np.ndarray, strength: float, heterogeneity: float, seed: int) -> np.ndarray:
         h, w = depth.shape
         spatial_field = self._fog_field(h, w, strength, heterogeneity, seed)
-        base_density = 0.025 + 0.14 * strength
+        base_density = 0.05 + 0.9 * strength
         depth_component = depth ** 1.35
-        depth_density = (0.20 + 2.30 * strength) * depth_component
+        depth_density = (0.1 + 2.0 * strength) * depth_component
         density = base_density + depth_density
         density *= spatial_field
         return np.clip(density, 0, 8.0).astype(np.float32)
@@ -96,28 +102,6 @@ class FogGenerator:
         a = (1 - 0.20 * strength) * a + (0.20 * strength) * daylight
         return np.clip(a, 0, 1)
 
-    def _daylight_veil(self, image: np.ndarray, strength: float, seed: int) -> np.ndarray:
-        img = image.astype(np.float32) / 255.0
-        hsv = cv2.cvtColor(img.astype(np.float32), cv2.COLOR_RGB2HSV)
-        saturation_factor = 1.0 - 0.18 * strength
-        hsv[:, :, 1] *= saturation_factor
-        contrast_factor = 1.0 - 0.10 * strength
-        hsv[:, :, 2] = 0.5 + contrast_factor * (hsv[:, :, 2] - 0.5)
-        result = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
-        atmospheric = np.array([0.84, 0.87, 0.90], dtype=np.float32)
-        veil_strength = 0.025 + 0.045 * strength
-        result = (1 - veil_strength) * result + veil_strength * atmospheric
-        return (np.clip(result, 0, 1) * 255).astype(np.uint8)
-
-    def _atmospheric_variation(self, image: np.ndarray, strength: float, seed: int) -> np.ndarray:
-        rng = np.random.default_rng(seed)
-        h, w = image.shape[:2]
-        noise = rng.normal(0, 1, (h, w)).astype(np.float32)
-        noise = cv2.GaussianBlur(noise, (0, 0), sigmaX=10)
-        noise /= (np.std(noise) + 1e-8)
-        amplitude = 0.25 + 0.60 * strength
-        result = image.astype(np.float32) + noise[:, :, None] * amplitude
-        return np.clip(result, 0, 255).astype(np.uint8)
 
     def apply(self, image: np.ndarray, strength: float, heterogeneity: float, seed: int = 42) -> np.ndarray:
         """Apply fog to image. Image should be RGB uint8."""
@@ -131,8 +115,5 @@ class FogGenerator:
         t3 = t[:, :, None]
         foggy = j * t3 + a[None, None, :] * (1.0 - t3)
         foggy = (np.clip(foggy, 0, 1) * 255).astype(np.uint8)
-
-        foggy = self._daylight_veil(foggy, strength, seed)
-        foggy = self._atmospheric_variation(foggy, strength, seed + 1000)
 
         return foggy

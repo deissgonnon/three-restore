@@ -1,6 +1,13 @@
 """Pipeline generating degraded images (fog, rain, lowlight) from clear image."""
 
+import shutil
+from pathlib import Path
+
 import numpy as np
+import yaml
+from PIL import Image
+from tqdm import tqdm
+
 from .fog import FogGenerator
 from .rain import RainGenerator
 from .lowlight import LowlightGenerator
@@ -16,9 +23,12 @@ class DegradationPipeline:
         self.lowlight_gen = LowlightGenerator()
 
     def _sample_param(self, param_range: list, seed: int) -> float:
-        """Sample uniformly from param_range."""
+        """Sample from a triangular range: [minimum, mode, maximum]."""
+        if len(param_range) != 3:
+            raise ValueError("A triangular range must contain [minimum, mode, maximum].")
+
         rng = np.random.default_rng(seed)
-        return float(rng.uniform(param_range[0], param_range[1]))
+        return float(rng.triangular(param_range[0], param_range[1], param_range[2]))
 
     def apply_fog(self, image: np.ndarray, seed: int = None) -> np.ndarray:
         """Apply fog with random parameters from config range."""
@@ -43,7 +53,14 @@ class DegradationPipeline:
         rain_types = cfg.get("rain_types", list(RainGenerator.RAIN_TYPES))
         rain_type = rain_types[np.random.default_rng(seed).integers(0, len(rain_types))]
 
-        return self.rain_gen.apply(image, rain_type=rain_type, seed=seed)
+        return self.rain_gen.apply(
+            image,
+            rain_type=rain_type,
+            drop_length=cfg.get("drop_length"),
+            drop_width=cfg.get("drop_width", 1),
+            slant_range=tuple(cfg.get("slant_range", (-10, 10))),
+            seed=seed,
+        )
 
     def apply_lowlight(self, image: np.ndarray, seed: int = None) -> np.ndarray:
         """Apply lowlight with random parameters from config range."""
@@ -80,3 +97,46 @@ class DegradationPipeline:
             results["lowlight"] = self.apply_lowlight(image, seed=seed + 300)
         
         return results
+
+
+def main() -> None:
+    dataset_name = "visdrone"
+    with Path("configs/datasets.yaml").open(encoding="utf-8") as config_file:
+        dataset = yaml.safe_load(config_file)["datasets"][dataset_name]
+    with Path("configs/degradation.yaml").open(encoding="utf-8") as config_file:
+        config = yaml.safe_load(config_file)
+
+    pipeline = DegradationPipeline(config)
+    output_root = Path("data/synthetic")
+    for split_name in ("train", "val", "test"):
+        split_dir = Path(dataset[f"{split_name}_dir"])
+        images_dir = split_dir / "images"
+        annotations_dir = split_dir / "annotations"
+        image_paths = sorted(
+            path
+            for path in images_dir.rglob("*")
+            if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+        )
+
+        for image_path in tqdm(image_paths, desc=f"Dégradations {split_name}"):
+            image = np.array(Image.open(image_path).convert("RGB"))
+            results = pipeline.apply_all(image, seed=config.get("seed_base", 42))
+            relative_path = image_path.relative_to(images_dir)
+            annotation = annotations_dir / relative_path.with_suffix(".txt")
+
+            for degradation_name, degraded_image in results.items():
+                if degradation_name == "clear":
+                    continue
+                destination = output_root / degradation_name / split_name
+                output_image = destination / "images" / relative_path
+                output_image.parent.mkdir(parents=True, exist_ok=True)
+                Image.fromarray(degraded_image).save(output_image)
+
+                if annotation.exists():
+                    output_annotation = destination / "annotations" / relative_path.with_suffix(".txt")
+                    output_annotation.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(annotation, output_annotation)
+
+
+if __name__ == "__main__":
+    main()
