@@ -2,7 +2,7 @@
 data/raw/
 data/synthetic/
 data/real_lowlight_test/
-!data/splits/
+data/splits/
 
 # Sorties d'entraînement
 outputs/
