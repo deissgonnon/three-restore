@@ -118,8 +118,7 @@ python -m src.preprocessing.day_night_classifier
 
 `facebook/sam3` est un modele Hugging Face protege. Il faut d'abord demander et
 accepter l'acces a la page du modele, puis fournir un token Hugging Face avec le
-role de lecture. Le token peut aussi etre stocke dans un secret Kaggle nomme
-`HF_TOKEN`. Il n'est jamais ecrit dans la configuration ni dans le depot.
+role de lecture.
 
 Elle copie les images de jour dans `data/splits/` et les images de nuit dans
 `data/real_lowlight_test/`.
@@ -127,29 +126,10 @@ Elle copie les images de jour dans `data/splits/` et les images de nuit dans
 La classification utilise des lots de `8` images, selon `batch_size` dans
 `configs/preprocessing.yaml`. Reduire cette valeur si la memoire GPU est insuffisante.
 
-Après l'exécution de ce script de séparation, une correction manuelle a été
-effectuée sur les images de nuit car `data/real_lowlight_test/` contenait encore
-des images de jour mal classées (faux positifs proches du seuil de décision).
-Cette correction s'est faite en deux temps :
-
-1. Relecture manuelle du bucket "nuit" et export d'un CSV corrigé
-   (`data/day_night_labels_corrige.csv`, colonnes `split,filename,path,label,
-   label_corrige,revise`), avec `label_corrige` reflétant le label validé
-   manuellement.
-2. Application physique des corrections avec :
-
-   Pour chaque ligne où `label != label_corrige`, l'image **et son
-   annotation correspondante** sont déplacées vers le dossier du label
-   corrigé (`data/splits/<split>/images|annotations/` ou
-   `data/real_lowlight_test/<split>/images|annotations/`).
-
+Après l'exécution de ce script de séparation, une correction manuelle est nécessaire (Voir `data/day_night_labels_corrige.csv`).
 
 
 ## Bilan statistique jour/nuit
-
-Une fois les corrections appliquées, obtenir la répartition jour/nuit par split
-(comptage direct des fichiers dans `data/splits/<split>/images/` et
-`data/real_lowlight_test/<split>/images/`) :
 
 ```bash 
 python scripts/bilan_jour_nuit.py
