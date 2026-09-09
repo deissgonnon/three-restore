@@ -112,11 +112,20 @@ La classification jour/nuit et la synthese sont deux etapes separees. Lancer
 d'abord la classification :
 
 ```bash
+export HF_TOKEN="hf_..."
 python -m src.preprocessing.day_night_classifier
 ```
 
+`facebook/sam3` est un modele Hugging Face protege. Il faut d'abord demander et
+accepter l'acces a la page du modele, puis fournir un token Hugging Face avec le
+role de lecture. Le token peut aussi etre stocke dans un secret Kaggle nomme
+`HF_TOKEN`. Il n'est jamais ecrit dans la configuration ni dans le depot.
+
 Elle copie les images de jour dans `data/splits/` et les images de nuit dans
 `data/real_lowlight_test/`. Lancer ensuite la synthese :
+
+La classification utilise des lots de `8` images, selon `batch_size` dans
+`configs/preprocessing.yaml`. Reduire cette valeur si la memoire GPU est insuffisante.
 
 ```bash
 python -m src.degradation.degradation_pipeline

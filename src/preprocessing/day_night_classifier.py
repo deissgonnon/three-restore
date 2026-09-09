@@ -1,6 +1,7 @@
 """Classe les images VisDrone en jour et nuit."""
 
 import shutil
+import os
 from pathlib import Path
 
 import torch
@@ -18,23 +19,47 @@ class DayNightClassifier:
         model_name: str = "facebook/sam3",
         prompt: str = "photo taken at night",
         threshold: float = 0.3,
+        batch_size: int = 1,
+        cache_dir: str | None = None,
         device: str | None = None,
     ):
         self.prompt = prompt
         self.threshold = threshold
+        self.batch_size = max(1, batch_size)
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.processor = Sam3Processor.from_pretrained(model_name)
-        self.model = Sam3Model.from_pretrained(model_name).to(self.device).eval()
+        token = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_HUB_TOKEN")
+        load_options = {"cache_dir": cache_dir, "token": token}
+        try:
+            self.processor = Sam3Processor.from_pretrained(model_name, **load_options)
+            self.model = Sam3Model.from_pretrained(model_name, **load_options).to(self.device).eval()
+        except OSError as error:
+            if "gated" in str(error).lower() or "401" in str(error):
+                raise RuntimeError(
+                    f"Le modele Hugging Face {model_name} est protege. "
+                    "Accepter son acces sur Hugging Face puis definir HF_TOKEN "
+                    "(ou HUGGINGFACE_HUB_TOKEN) avant de relancer."
+                ) from error
+            raise
 
     def is_night(self, image: Image.Image) -> bool:
         """Retourne True si l'image est classée comme image de nuit."""
+        return self.is_night_batch([image])[0]
+
+    def is_night_batch(self, images: list[Image.Image]) -> list[bool]:
+        """Classifie plusieurs images en une seule inférence SAM3."""
+        if not images:
+            return []
+
         inputs = self.processor(
-            images=image, text=self.prompt, return_tensors="pt"
+            images=images,
+            text=[self.prompt] * len(images),
+            return_tensors="pt",
         ).to(self.device)
         with torch.no_grad():
             outputs = self.model(**inputs)
-        score = torch.sigmoid(outputs.presence_logits).item()
-        return score >= self.threshold
+        logits = outputs.presence_logits.reshape(len(images), -1)[:, 0]
+        scores = torch.sigmoid(logits)
+        return (scores >= self.threshold).tolist()
 
     def _copy_image_and_annotation(
         self,
@@ -70,16 +95,25 @@ class DayNightClassifier:
             if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
         )
 
-        for image_path in tqdm(image_paths, desc=f"Classification {split_name}"):
-            with Image.open(image_path) as image:
+        for start in tqdm(
+            range(0, len(image_paths), self.batch_size),
+            desc=f"Classification {split_name}",
+        ):
+            batch_paths = image_paths[start : start + self.batch_size]
+            images = []
+            for image_path in batch_paths:
+                with Image.open(image_path) as image:
+                    images.append(image.convert("RGB"))
+            night_flags = self.is_night_batch(images)
+            for image_path, is_night in zip(batch_paths, night_flags):
                 destination = (
                     night_dir / split_name
-                    if self.is_night(image)
+                    if is_night
                     else day_dir / split_name
                 )
-            self._copy_image_and_annotation(
-                image_path, images_dir, annotations_dir, destination
-            )
+                self._copy_image_and_annotation(
+                    image_path, images_dir, annotations_dir, destination
+                )
 
         print(f"{split_name}: {len(image_paths)} images classées")
 
@@ -99,6 +133,8 @@ def main() -> None:
         model_name=config.get("model_name", "facebook/sam3"),
         prompt=config.get("prompt", "photo taken at night"),
         threshold=config.get("presence_threshold", 0.3),
+        batch_size=config.get("batch_size", 1),
+        cache_dir=config.get("cache_dir"),
     )
     for split_name in ("train", "val", "test"):
         classifier.process_split(
