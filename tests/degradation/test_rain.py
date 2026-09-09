@@ -22,15 +22,16 @@ def test_apply_rain_on_random_train_image():
     ]
     assert image_paths, f"Aucune image trouvée dans {images_dir}"
 
-    random.seed(44)  # Pour la reproductibilité
+    #random.seed(44)  # Pour la reproductibilité
     image_path = random.choice(image_paths)
+    image_path = "data/degradation_test/original.jpg"
     image = np.array(Image.open(image_path).convert("RGB"))
     rainy_image = RainGenerator.apply(
         image=image,
-        rain_type="heavy",
+        rain_type="torrential",
         drop_length=20,
-        drop_width=2,
-        slant_range=(-15, 15),
+        drop_width=1,
+        slant_range=(-20, 20),
         seed=42,
     )
 

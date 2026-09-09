@@ -110,18 +110,21 @@ class DegradationPipeline:
 
 
 def main() -> None:
-    dataset_name = "visdrone"
-    with Path("configs/datasets.yaml").open(encoding="utf-8") as config_file:
-        dataset = yaml.safe_load(config_file)["datasets"][dataset_name]
     with Path("configs/degradation.yaml").open(encoding="utf-8") as config_file:
         config = yaml.safe_load(config_file)
 
     pipeline = DegradationPipeline(config)
     output_root = Path("data/synthetic")
+    source_root = Path("data/splits")
     for split_name in ("train", "val", "test"):
-        split_dir = Path(dataset[f"{split_name}_dir"])
+        split_dir = source_root / split_name
         images_dir = split_dir / "images"
         annotations_dir = split_dir / "annotations"
+        if not images_dir.exists():
+            raise FileNotFoundError(
+                f"Split de jour absent: {images_dir}. "
+                "Lancer d'abord python -m src.preprocessing.day_night_classifier."
+            )
         image_paths = sorted(
             path
             for path in images_dir.rglob("*")

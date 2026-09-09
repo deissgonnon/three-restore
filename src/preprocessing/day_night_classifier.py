@@ -88,8 +88,18 @@ def main() -> None:
     dataset_name = "visdrone"
     with Path("configs/datasets.yaml").open(encoding="utf-8") as config_file:
         dataset = yaml.safe_load(config_file)["datasets"][dataset_name]
+    with Path("configs/preprocessing.yaml").open(encoding="utf-8") as config_file:
+        config = yaml.safe_load(config_file)["day_night_classifier"]
 
-    classifier = DayNightClassifier()
+    if not config.get("enable", False):
+        print("Classification jour/nuit desactivee dans configs/preprocessing.yaml")
+        return
+
+    classifier = DayNightClassifier(
+        model_name=config.get("model_name", "facebook/sam3"),
+        prompt=config.get("prompt", "photo taken at night"),
+        threshold=config.get("presence_threshold", 0.3),
+    )
     for split_name in ("train", "val", "test"):
         classifier.process_split(
             split_dir=Path(dataset[f"{split_name}_dir"]),

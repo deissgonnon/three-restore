@@ -70,6 +70,63 @@ Pour changer de dataset, modifier uniquement `dataset_name` dans la fonction `ma
 pytest tests/
 ```
 
+### Tester les trois degradations
+
+Les tests ci-dessous utilisent `data/degradation_test/original.jpg`, verifient que
+la sortie conserve la meme taille et le type `uint8`, puis enregistrent une image
+pour inspection visuelle.
+
+```bash
+pytest tests/degradation/test_fog.py -s
+```
+
+Genere `data/degradation_test/foggy.jpg`. Le test de brouillard charge Depth
+Anything la premiere fois et peut donc etre plus long.
+
+```bash
+pytest tests/degradation/test_rain.py -s
+```
+
+Genere `data/degradation_test/rainy.jpg` avec le profil `torrential`, une longueur
+de goutte de `20` et une seed `42`.
+
+```bash
+pytest tests/degradation/test_lowlight.py -s
+```
+
+Genere `data/degradation_test/lowlight.jpg` avec luminosite `-0.4`, contraste
+`-0.1`, saturation `0.8` et seed `42`.
+
+Pour executer les trois tests :
+
+```bash
+pytest tests/degradation/test_fog.py tests/degradation/test_rain.py tests/degradation/test_lowlight.py -s
+```
+
+Ces tests sont des tests d'image isoles et utilisent leurs propres parametres. Pour
+tester les valeurs de `configs/degradation.yaml`, utiliser la synthese ci-dessous.
+
+## Lancer la synthese des degradations
+
+La classification jour/nuit et la synthese sont deux etapes separees. Lancer
+d'abord la classification :
+
+```bash
+python -m src.preprocessing.day_night_classifier
+```
+
+Elle copie les images de jour dans `data/splits/` et les images de nuit dans
+`data/real_lowlight_test/`. Lancer ensuite la synthese :
+
+```bash
+python -m src.degradation.degradation_pipeline
+```
+
+La synthese lit `configs/degradation.yaml` et ecrit les images et annotations dans
+`data/synthetic/{fog,rain,lowlight}/`.
+Modifier les parametres dans `configs/degradation.yaml` si necessaire. Mais les valeurs présentes dedans sont déjà optimales.
+
+
 ## Regler la faible luminosite en direct
 
 Lancer l’interface Gradio avec l’image de test prechargee (un port libre est choisi automatiquement) :
