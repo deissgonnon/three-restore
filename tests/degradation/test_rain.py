@@ -24,7 +24,7 @@ def test_apply_rain_on_random_train_image():
 
     #random.seed(44)  # Pour la reproductibilité
     image_path = random.choice(image_paths)
-    image_path = "data/degradation_test/original.jpg"
+    #image_path = "data/degradation_test/original.jpg"
     image = np.array(Image.open(image_path).convert("RGB"))
     rainy_image = RainGenerator.apply(
         image=image,
