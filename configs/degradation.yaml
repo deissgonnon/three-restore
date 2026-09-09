@@ -19,8 +19,5 @@ lowlight:
   shot_noise_range: [0.0, 0.1, 0.4]
   saturation_range: [0.4, 0.8, 1.0]
 
-noise:
-  enable: false
-  gaussian_std_range: [0.01, 0.03, 0.05]
 
 seed_base: 428
