@@ -69,3 +69,15 @@ Pour changer de dataset, modifier uniquement `dataset_name` dans la fonction `ma
 ```bash
 pytest tests/
 ```
+
+## Regler la faible luminosite en direct
+
+Lancer l’interface Gradio avec l’image de test prechargee (un port libre est choisi automatiquement) :
+
+```bash
+python scripts/lowlight_ui.py
+```
+
+Les curseurs mettent a jour l’aperçu immediatement. Pour imposer le port `7860`, utiliser
+`python scripts/lowlight_ui.py --port 7860`. Pour un acces depuis une autre machine,
+ajouter `--host 0.0.0.0`.

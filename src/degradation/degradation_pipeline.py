@@ -18,7 +18,11 @@ class DegradationPipeline:
 
     def __init__(self, config: dict):
         self.config = config
-        self.fog_gen = FogGenerator(depth_model=config.get("fog", {}).get("depth_model"))
+        fog_config = config.get("fog", {})
+        self.fog_gen = FogGenerator(
+            depth_model=fog_config.get("depth_model"),
+            blur_sigma=fog_config.get("blur_sigma", 1.5),
+        )
         self.rain_gen = RainGenerator()
         self.lowlight_gen = LowlightGenerator()
 
@@ -26,6 +30,8 @@ class DegradationPipeline:
         """Sample from a triangular range: [minimum, mode, maximum]."""
         if len(param_range) != 3:
             raise ValueError("A triangular range must contain [minimum, mode, maximum].")
+        if param_range[0] == param_range[1] == param_range[2]:
+            return float(param_range[0])
 
         rng = np.random.default_rng(seed)
         return float(rng.triangular(param_range[0], param_range[1], param_range[2]))
@@ -52,11 +58,15 @@ class DegradationPipeline:
         cfg = self.config["rain"]
         rain_types = cfg.get("rain_types", list(RainGenerator.RAIN_TYPES))
         rain_type = rain_types[np.random.default_rng(seed).integers(0, len(rain_types))]
+        drop_length = cfg.get("drop_length")
+        if isinstance(drop_length, list):
+            drop_length = self._sample_param(drop_length, seed + 1)
+            drop_length = int(round(drop_length))
 
         return self.rain_gen.apply(
             image,
             rain_type=rain_type,
-            drop_length=cfg.get("drop_length"),
+            drop_length=drop_length,
             drop_width=cfg.get("drop_width", 1),
             slant_range=tuple(cfg.get("slant_range", (-10, 10))),
             seed=seed,

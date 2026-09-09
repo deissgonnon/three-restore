@@ -10,9 +10,10 @@ from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 class FogGenerator:
     """Génère du brouillard synthétique via Koschmieder + profondeur estimée."""
 
-    def __init__(self, device: str = "cuda", depth_model: str = None):
+    def __init__(self, device: str = "cuda", depth_model: str = None, blur_sigma: float = 1.5):
         self.device = device if torch.cuda.is_available() else "cpu"
         self.depth_model_name = depth_model or "depth-anything/Depth-Anything-V2-Small-hf"
+        self.blur_sigma = blur_sigma
         self.processor = None
         self.model = None
 
@@ -41,7 +42,7 @@ class FogGenerator:
         depth = (depth - p1) / (p99 - p1 + 1e-8)
         depth = np.clip(depth, 0, 1)
         depth = 1.0 - depth
-        depth = cv2.GaussianBlur(depth.astype(np.float32), (0, 0), sigmaX=1.5)
+        depth = cv2.GaussianBlur(depth.astype(np.float32), (0, 0), sigmaX=self.blur_sigma)
         return np.clip(depth, 0, 1)
 
     def _fog_field(self, h: int, w: int, strength: float, heterogeneity: float, seed: int) -> np.ndarray:
