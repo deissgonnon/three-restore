@@ -122,10 +122,52 @@ role de lecture. Le token peut aussi etre stocke dans un secret Kaggle nomme
 `HF_TOKEN`. Il n'est jamais ecrit dans la configuration ni dans le depot.
 
 Elle copie les images de jour dans `data/splits/` et les images de nuit dans
-`data/real_lowlight_test/`. Lancer ensuite la synthese :
+`data/real_lowlight_test/`.
 
 La classification utilise des lots de `8` images, selon `batch_size` dans
 `configs/preprocessing.yaml`. Reduire cette valeur si la memoire GPU est insuffisante.
+
+Après l'exécution de ce script de séparation, une correction manuelle a été
+effectuée sur les images de nuit car `data/real_lowlight_test/` contenait encore
+des images de jour mal classées (faux positifs proches du seuil de décision).
+Cette correction s'est faite en deux temps :
+
+1. Relecture manuelle du bucket "nuit" et export d'un CSV corrigé
+   (`data/day_night_labels_corrige.csv`, colonnes `split,filename,path,label,
+   label_corrige,revise`), avec `label_corrige` reflétant le label validé
+   manuellement.
+2. Application physique des corrections avec :
+
+   Pour chaque ligne où `label != label_corrige`, l'image **et son
+   annotation correspondante** sont déplacées vers le dossier du label
+   corrigé (`data/splits/<split>/images|annotations/` ou
+   `data/real_lowlight_test/<split>/images|annotations/`).
+
+
+
+## Bilan statistique jour/nuit
+
+Une fois les corrections appliquées, obtenir la répartition jour/nuit par split
+(comptage direct des fichiers dans `data/splits/<split>/images/` et
+`data/real_lowlight_test/<split>/images/`) :
+
+```bash 
+python scripts/bilan_jour_nuit.py
+```
+
+Dernier bilan obtenu :
+
+```
+split       jour    nuit   total    % nuit
+------------------------------------------
+train       5200    1271    6471     19.6%
+val          533      15     548      2.7%
+test         995     615    1610     38.2%
+------------------------------------------
+total       6728    1901    8629     22.0%
+```
+
+Lancer ensuite la synthese :
 
 ```bash
 python -m src.degradation.degradation_pipeline
@@ -136,14 +178,3 @@ La synthese lit `configs/degradation.yaml` et ecrit les images et annotations da
 Modifier les parametres dans `configs/degradation.yaml` si necessaire. Mais les valeurs présentes dedans sont déjà optimales.
 
 
-## Regler la faible luminosite en direct
-
-Lancer l’interface Gradio avec l’image de test prechargee (un port libre est choisi automatiquement) :
-
-```bash
-python scripts/lowlight_ui.py
-```
-
-Les curseurs mettent a jour l’aperçu immediatement. Pour imposer le port `7860`, utiliser
-`python scripts/lowlight_ui.py --port 7860`. Pour un acces depuis une autre machine,
-ajouter `--host 0.0.0.0`.
