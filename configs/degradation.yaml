@@ -14,7 +14,9 @@ rain:
 
 lowlight:
   enable: true
-  gamma_range: [200, 260, 320]
+  gamma_range: [250, 300, 350]
+  adaptive_gamma: true
+  ref_luminance: 120.0
   shot_noise_range: [0.0, 0.0, 0.0]
   saturation_range: [0.4, 0.8, 1.0]
 

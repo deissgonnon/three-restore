@@ -130,6 +130,9 @@ class DegradationPipeline:
         shot_noise = self._sample_param(cfg.get("shot_noise_range", [0.0, 0.0, 0.0]), self._offset_seed(seed, 2))
         saturation = self._sample_param(cfg.get("saturation_range", [1.0, 1.0, 1.0]), self._offset_seed(seed, 3))
         
+        adaptive_gamma = cfg.get("adaptive_gamma", False)
+        ref_luminance = float(cfg.get("ref_luminance", 120.0))
+
         return self.lowlight_gen.apply_with_range(
             image,
             gamma_limit=gamma_limit,
@@ -137,6 +140,8 @@ class DegradationPipeline:
             contrast_limit=contrast_limit,
             shot_noise_scale=shot_noise,
             saturation=saturation,
+            adaptive_gamma=adaptive_gamma,
+            ref_luminance=ref_luminance,
             seed=seed,
         )
 
