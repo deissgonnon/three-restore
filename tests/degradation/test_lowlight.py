@@ -28,9 +28,8 @@ def test_apply_lowlight_on_random_train_image():
     image = np.array(Image.open(image_path).convert("RGB"))
     lowlight_image = LowlightGenerator.apply_with_range(
         image=image,
-        brightness_limit=(-0.4, -0.4),
-        contrast_limit=(-0.1, -0.1),
-        shot_noise_scale=-0.05,
+        gamma_limit=(150, 250),
+        shot_noise_scale=0.0,
         saturation=0.8,
         seed=42,
     )
