@@ -18,6 +18,8 @@ class DegradationPipeline:
 
     def __init__(self, config: dict):
         self.config = config
+        self.seed_base = self._normalize_seed(config.get("seed_base"))
+        self._rng = np.random.default_rng(self.seed_base) if self.seed_base is not None else None
         fog_config = config.get("fog", {})
         self.fog_gen = FogGenerator(
             depth_model=fog_config.get("depth_model"),
@@ -39,10 +41,12 @@ class DegradationPipeline:
         return int(seed)
 
     def _get_seed(self, seed: int | str | None = None) -> int | None:
-        """Resolve seed from parameter or config['seed_base']."""
+        """Resolve seed from parameter or advance the reproducible sequence from seed_base."""
         if seed is not None:
             return self._normalize_seed(seed)
-        return self._normalize_seed(self.config.get("seed_base"))
+        if self._rng is not None:
+            return int(self._rng.integers(0, 2**31 - 1))
+        return None
 
     @staticmethod
     def _offset_seed(seed: int | None, offset: int) -> int | None:
@@ -184,7 +188,7 @@ def main() -> None:
 
         for image_path in tqdm(image_paths, desc=f"Dégradations {split_name}"):
             image = np.array(Image.open(image_path).convert("RGB"))
-            results = pipeline.apply_all(image, seed=config.get("seed_base"))
+            results = pipeline.apply_all(image)
             relative_path = image_path.relative_to(images_dir)
             annotation = annotations_dir / relative_path.with_suffix(".txt")
 

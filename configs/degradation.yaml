@@ -7,7 +7,7 @@ fog:
 
 rain:
   enable: true
-  rain_types: [drizzle, default, heavy, torrential]
+  rain_types: [ heavy, torrential]
   drop_length: [10, 20, 60]
   drop_width: 1
   slant_range: [-20, 20]
@@ -21,4 +21,4 @@ lowlight:
   saturation_range: [0.4, 0.8, 1.0]
 
 
-seed_base: None
+seed_base: 42

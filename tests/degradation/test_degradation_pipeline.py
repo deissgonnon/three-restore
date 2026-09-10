@@ -29,7 +29,7 @@ def test_degradation_pipeline():
 
     
     image_path = random.choice(image_paths)
-    #image_path = "data/degradation_test/pipeline_clear.jpg"  # Décommenter pour tester une image spécifique
+    image_path = "data/degradation_test/pipeline_clear.jpg"  # Décommenter pour tester une image spécifique
     image = np.array(Image.open(image_path).convert("RGB"))
 
     # Initialisation du pipeline avec la configuration YAML
@@ -77,4 +77,29 @@ def test_degradation_pipeline_with_seed_base_none():
     for name, degraded_image in results.items():
         assert degraded_image.shape == dummy_image.shape
         assert degraded_image.dtype == np.uint8
+
+
+def test_degradation_pipeline_seed_reproducibility_and_diversity():
+    with Path("configs/degradation.yaml").open(encoding="utf-8") as config_file:
+        degradation_config = yaml.safe_load(config_file)
+
+    degradation_config["seed_base"] = 42
+    degradation_config["fog"]["enable"] = False
+
+    dummy_image = np.full((64, 64, 3), 120, dtype=np.uint8)
+
+    pipeline_1 = DegradationPipeline(degradation_config)
+    res_1a = pipeline_1.apply_all(dummy_image)
+    res_1b = pipeline_1.apply_all(dummy_image)
+
+    # Vérification de la diversité entre images successives
+    assert not np.array_equal(res_1a["rain"], res_1b["rain"]), "La pluie doit être différente entre deux images"
+
+    # Vérification de la reproductibilité d'un run à l'autre avec le même seed_base
+    pipeline_2 = DegradationPipeline(degradation_config)
+    res_2a = pipeline_2.apply_all(dummy_image)
+    res_2b = pipeline_2.apply_all(dummy_image)
+
+    assert np.array_equal(res_1a["rain"], res_2a["rain"]), "L'image 1 doit être identique d'un run à l'autre"
+    assert np.array_equal(res_1b["rain"], res_2b["rain"]), "L'image 2 doit être identique d'un run à l'autre"
 
