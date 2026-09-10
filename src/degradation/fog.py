@@ -56,17 +56,13 @@ class FogGenerator:
         sigma2 = max(50, min(h, w) / 5)
         noise2 = cv2.GaussianBlur(noise2, (0, 0), sigmaX=sigma2)
         noise2 = (noise2 - noise2.min()) / (noise2.max() - noise2.min() + 1e-8)
-        print(f"Fog field noise stats: min={noise.min():.4f}, max={noise.max():.4f}, mean={noise.mean():.4f}, std={noise.std():.4f}")
-        print(f"Fog field noise2 stats: min={noise2.min():.4f}, max={noise2.max():.4f}, mean={noise2.mean():.4f}, std={noise2.std():.4f}")
+        
 
         field = 0.70 * noise + 0.30 * noise2
-        print(f"Fog field combined stats: min={field.min():.4f}, max={field.max():.4f}, mean={field.mean():.4f}, std={field.std():.4f}")
+
         field -= field.mean()
         field /= (np.std(field) + 1e-8)
-        print(f"Fog field normalized stats: min={field.min():.4f}, max={field.max():.4f}, mean={field.mean():.4f}, std={field.std():.4f}")
         field = 1.0 + heterogeneity * field
-        # On verifie si le cip coupe assez de valeurs 
-        print(f"Fog field stats: min={field.min():.4f}, max={field.max():.4f}, mean={field.mean():.4f}, std={field.std():.4f}")
         field = np.clip(field, 1.0 - 1.5 * heterogeneity, 1.0 + 1.5 * heterogeneity)
         return field.astype(np.float32)
 
