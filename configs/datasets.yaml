@@ -2,6 +2,10 @@
 
 datasets:
   visdrone:
-    url: ""
-    archive_name: "visdrone.zip"
+    # URL Kaggle, Hugging Face, Google Drive ou URL directe d'une archive.
+    url: "https://www.kaggle.com/datasets/kushagrapandya/visdrone-dataset"
     output_dir: "data/raw/visdrone"
+
+    train_dir: "data/raw/visdrone/VisDrone2019-DET-train/VisDrone2019-DET-train"
+    val_dir: "data/raw/visdrone/VisDrone2019-DET-val/VisDrone2019-DET-val"
+    test_dir: "data/raw/visdrone/VisDrone2019-DET-test-dev/VisDrone2019-DET-test-dev"

@@ -55,23 +55,106 @@ pip install -r requirements.txt
 
 ## Télécharger un jeu de données
 
-Les sources sont déclarées dans `configs/datasets.yaml`. Pour télécharger VisDrone,
-renseigner son URL puis lancer :
+Les jeux de données sont définis dans `configs/datasets.yaml`. Le script reconnaît
+les URL Kaggle, Hugging Face, Google Drive et les URL directes d'archives :
 
 ```bash
-python scripts/download_dataset.py --dataset visdrone
+python scripts/download_dataset.py
 ```
 
-Une URL ponctuelle et un dossier de sortie peuvent aussi être fournis sans modifier
-la configuration :
-
-```bash
-python scripts/download_dataset.py --dataset visdrone \
-  --url "URL_DE_L_ARCHIVE" --output-dir data/raw/visdrone
-```
+Pour changer de dataset, modifier uniquement `dataset_name` dans la fonction `main`.
 
 ## Lancer les tests
 
 ```bash
 pytest tests/
 ```
+
+### Tester les trois degradations
+
+Les tests ci-dessous utilisent `data/degradation_test/original.jpg`, verifient que
+la sortie conserve la meme taille et le type `uint8`, puis enregistrent une image
+pour inspection visuelle.
+
+```bash
+pytest tests/degradation/test_fog.py -s
+```
+
+Genere `data/degradation_test/foggy.jpg`. Le test de brouillard charge Depth
+Anything la premiere fois et peut donc etre plus long.
+
+```bash
+pytest tests/degradation/test_rain.py -s
+```
+
+Genere `data/degradation_test/rainy.jpg` avec le profil `torrential`, une longueur
+de goutte de `20` et une seed `42`.
+
+```bash
+pytest tests/degradation/test_lowlight.py -s
+```
+
+Genere `data/degradation_test/lowlight.jpg` avec luminosite `-0.4`, contraste
+`-0.1`, saturation `0.8` et seed `42`.
+
+Pour executer les trois tests :
+
+```bash
+pytest tests/degradation/test_fog.py tests/degradation/test_rain.py tests/degradation/test_lowlight.py -s
+```
+
+Ces tests sont des tests d'image isoles et utilisent leurs propres parametres. Pour
+tester les valeurs de `configs/degradation.yaml`, utiliser la synthese ci-dessous.
+
+## Lancer la synthese des degradations
+
+La classification jour/nuit et la synthese sont deux etapes separees. Lancer
+d'abord la classification :
+
+```bash
+export HF_TOKEN="hf_..."
+python -m src.preprocessing.day_night_classifier
+```
+
+`facebook/sam3` est un modele Hugging Face protege. Il faut d'abord demander et
+accepter l'acces a la page du modele, puis fournir un token Hugging Face avec le
+role de lecture.
+
+Elle copie les images de jour dans `data/splits/` et les images de nuit dans
+`data/real_lowlight_test/`.
+
+La classification utilise des lots de `8` images, selon `batch_size` dans
+`configs/preprocessing.yaml`. Reduire cette valeur si la memoire GPU est insuffisante.
+
+Après l'exécution de ce script de séparation, une correction manuelle est nécessaire (Voir `data/day_night_labels_corrige.csv`).
+
+
+## Bilan statistique jour/nuit
+
+```bash 
+python scripts/bilan_jour_nuit.py
+```
+
+Dernier bilan obtenu :
+
+```
+split       jour    nuit   total    % nuit
+------------------------------------------
+train       5200    1271    6471     19.6%
+val          533      15     548      2.7%
+test         995     615    1610     38.2%
+------------------------------------------
+total       6728    1901    8629     22.0%
+```
+
+Lancer ensuite la synthese :
+
+```bash
+python -m src.degradation.degradation_pipeline
+```
+
+La synthese lit `configs/degradation.yaml` et ecrit les images et annotations dans
+`data/synthetic/{fog,rain,lowlight}/`.
+Modifier les parametres dans `configs/degradation.yaml` si necessaire. Mais les valeurs présentes dedans sont déjà optimales..
+
+

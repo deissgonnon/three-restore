@@ -1,1 +1,1 @@
-"""Filtrage pré-entraînement (ex. classification jour/nuit via SAM3)."""
+"""Filtrage pré-entraînement """

@@ -3,6 +3,10 @@ data/raw/
 data/synthetic/
 data/real_lowlight_test/
 data/splits/
+<<<<<<< HEAD
+=======
+data/preprocessing_cache/
+>>>>>>> 547e5c501c1b796c212f20f53490e06f40711893
 
 # Sorties d'entraînement
 outputs/

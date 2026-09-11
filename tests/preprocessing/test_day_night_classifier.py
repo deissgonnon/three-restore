@@ -1,14 +1,30 @@
-"""Tests pour src/preprocessing/day_night_classifier.py"""
+"""Test réel de classification d'une image du split train."""
 
-import pytest
-from src.preprocessing.day_night_classifier import compute_presence_scores, classify_day_night
+from pathlib import Path
+from random import choice
+
+import yaml
+from PIL import Image
+from src.preprocessing.day_night_classifier import DayNightClassifier
 
 
-def test_compute_presence_scores_not_implemented():
-    with pytest.raises(NotImplementedError):
-        compute_presence_scores(["dummy.jpg"])
+def test_classify_train_image():
+    with Path("configs/datasets.yaml").open(encoding="utf-8") as config_file:
+        dataset = yaml.safe_load(config_file)["datasets"]["visdrone"]
 
+    images_dir = Path(dataset["train_dir"]) / "images"
+    image_paths = [
+        path
+        for path in images_dir.rglob("*")
+        if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+    ]
+    assert image_paths, f"Aucune image trouvée dans {images_dir}"
+    image_path = choice(image_paths)
 
-def test_classify_day_night_not_implemented():
-    with pytest.raises(NotImplementedError):
-        classify_day_night([0.5])
+    classifier = DayNightClassifier()
+    with Image.open(image_path) as image:
+        is_night = classifier.is_night(image)
+        #image.show()
+
+    print(f"Image testée : {image_path}")
+    print(f"Classification : {'nuit' if is_night else 'jour'}")

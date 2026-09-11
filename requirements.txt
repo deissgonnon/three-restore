@@ -6,11 +6,15 @@ scikit-image
 pillow
 matplotlib
 albumentations
+gradio
+streamlit
 pandas
 pyyaml
 tqdm
 pytest
 transformers
 huggingface_hub
+kagglehub
+gdown
 lpips
 ultralytics
