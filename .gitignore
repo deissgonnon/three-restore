@@ -1,12 +1,10 @@
 # Données (trop volumineuses pour git, sauf splits/)
 data/raw/
 data/synthetic/
+data/synthetic v1/
 data/real_lowlight_test/
 data/splits/
-<<<<<<< HEAD
-=======
 data/preprocessing_cache/
->>>>>>> 547e5c501c1b796c212f20f53490e06f40711893
 
 # Sorties d'entraînement
 outputs/
@@ -31,3 +29,8 @@ venv/
 
 # OS
 .DS_Store
+
+# ssh
+code
+ssh.ipynb
+vscode_cli.tar.gz
