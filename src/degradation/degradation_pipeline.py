@@ -54,14 +54,14 @@ class DegradationPipeline:
         return None if seed is None else seed + offset
 
     def _sample_param(self, param_range: list, seed: int | None = None) -> float:
-        """Sample from a triangular range: [minimum, mode, maximum]."""
-        if len(param_range) != 3:
-            raise ValueError("A triangular range must contain [minimum, mode, maximum].")
-        if param_range[0] == param_range[1] == param_range[2]:
+        """Sample from a uniform range: [minimum, maximum]."""
+        if len(param_range) != 2:
+            raise ValueError("A uniform range must contain [minimum, maximum].")
+        if param_range[0] == param_range[1]:
             return float(param_range[0])
 
         rng = np.random.default_rng(seed)
-        return float(rng.triangular(param_range[0], param_range[1], param_range[2]))
+        return float(rng.uniform(param_range[0], param_range[1]))
 
     def apply_fog(self, image: np.ndarray, seed: int | None = None) -> np.ndarray:
         """Apply fog with random parameters from config range."""
@@ -131,8 +131,8 @@ class DegradationPipeline:
         else:
             gamma_limit = (180, 250)
 
-        shot_noise = self._sample_param(cfg.get("shot_noise_range", [0.0, 0.0, 0.0]), self._offset_seed(seed, 2))
-        saturation = self._sample_param(cfg.get("saturation_range", [1.0, 1.0, 1.0]), self._offset_seed(seed, 3))
+        shot_noise = self._sample_param(cfg.get("shot_noise_range", [0.0, 0.0]), self._offset_seed(seed, 2))
+        saturation = self._sample_param(cfg.get("saturation_range", [1.0, 1.0]), self._offset_seed(seed, 3))
         
         adaptive_gamma = cfg.get("adaptive_gamma", False)
         ref_luminance = float(cfg.get("ref_luminance", 120.0))

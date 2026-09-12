@@ -1,24 +1,24 @@
 fog:
   enable: true
   depth_model: "depth-anything/Depth-Anything-V2-Small-hf"
-  strength_range: [0.50,0.9,  1.0]
-  heterogeneity_range: [0.0, 0.2, 0.35]
+  strength_range: [0.50, 1.0]
+  heterogeneity_range: [0.0, 0.35]
   blur_sigma: 1.5
 
 rain:
   enable: true
-  rain_types: [ heavy, torrential]
-  drop_length: [10, 20, 60]
+  rain_types: [default, heavy, torrential]
+  drop_length: [10, 60]
   drop_width: 1
   slant_range: [-20, 20]
 
 lowlight:
   enable: true
-  gamma_range: [250, 300, 350]
+  gamma_range: [150, 350]
   adaptive_gamma: true
   ref_luminance: 120.0
-  shot_noise_range: [0.0, 0.0, 0.0]
-  saturation_range: [0.4, 0.8, 1.0]
+  shot_noise_range: [0.0, 0.03]
+  saturation_range: [0.4, 1.0]
 
 
 seed_base: 42
