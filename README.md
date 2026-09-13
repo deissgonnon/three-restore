@@ -155,6 +155,14 @@ python -m src.degradation.degradation_pipeline
 
 La synthese lit `configs/degradation.yaml` et ecrit les images et annotations dans
 `data/synthetic/{fog,rain,lowlight}/`.
-Modifier les parametres dans `configs/degradation.yaml` si necessaire. Mais les valeurs présentes dedans sont déjà optimales..
+Modifier les parametres dans `configs/degradation.yaml` si necessaire. Mais les valeurs présentes dedans sont déjà optimales.
 
+## Entraîner une baseline (Ex: MoCE-IR)
 
+Pour lancer l'entraînement d'un modèle de référence comme **MoCE-IR** sur les données générées (images claires comme cibles, et dégradations mixées comme entrées), vous pouvez utiliser le script de lancement suivant :
+
+```bash
+python scripts/train.py --baseline moce_ir --batch_size 4 --epochs 100 --lr 0.0002
+```
+
+Les hyperparamètres spécifiques au modèle se trouvent dans `configs/baselines.yaml`. Le DataLoader (`MixedDegradationDataset`) se chargera automatiquement de piocher aléatoirement parmi les dégradations (`fog`, `rain`, `lowlight`) sans altérer la géométrie de l'image (les boîtes englobantes resteront valides).

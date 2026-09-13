@@ -117,6 +117,16 @@ python -m src.degradation.degradation_pipeline
 The synthesis reads `configs/degradation.yaml` and writes images and annotations to `data/synthetic/{fog,rain,lowlight}/`.
 Modify the parameters in `configs/degradation.yaml` if necessary. But the values present there are already optimal.
 
+## Train a baseline (E.g., MoCE-IR)
+
+To start training a reference model like **MoCE-IR** on the generated data (clear images as targets, mixed degradations as inputs), you can use the following launch script:
+
+```bash
+python scripts/train.py --baseline moce_ir --batch_size 4 --epochs 100 --lr 0.0002
+```
+
+Model-specific hyperparameters are located in `configs/baselines.yaml`. The DataLoader (`MixedDegradationDataset`) will automatically pick randomly among the degradations (`fog`, `rain`, `lowlight`) without altering the geometry of the image (bounding boxes will remain valid).
+
 ## Tune low light interactively
 
 Launch the Gradio interface with the preloaded test image (a free port is chosen automatically):
