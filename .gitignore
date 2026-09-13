@@ -1,7 +1,7 @@
 # Données (trop volumineuses pour git, sauf splits/)
 data/raw/
 data/synthetic/
-data/synthetic v1/
+data/synthetic v2/
 data/real_lowlight_test/
 data/splits/
 data/preprocessing_cache/

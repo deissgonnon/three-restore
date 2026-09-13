@@ -8,13 +8,13 @@ fog:
 rain:
   enable: true
   rain_types: [default, heavy, torrential]
-  drop_length: [10, 60]
+  drop_length: [10, 50]
   drop_width: 1
   slant_range: [-20, 20]
 
 lowlight:
   enable: true
-  gamma_range: [150, 350]
+  gamma_range: [200, 320]
   adaptive_gamma: true
   ref_luminance: 120.0
   shot_noise_range: [0.0, 0.03]
