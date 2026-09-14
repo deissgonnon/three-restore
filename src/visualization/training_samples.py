@@ -9,9 +9,24 @@ from pathlib import Path
 import numpy as np
 import torch
 from PIL import Image
-from torchvision.transforms.functional import to_tensor, to_pil_image
+from torchvision.transforms.functional import to_tensor, to_pil_image, pad as tf_pad
 
 from ..degradation.degradation_pipeline import DegradationPipeline
+
+
+def _pad_to_multiple(img, multiple: int = 16):
+    """Pad une image PIL pour que ses dimensions soient divisibles par `multiple`.
+
+    Prérequis pour MoCE-IR (downsampling successifs par 2). Le padding est ajouté
+    à droite et en bas pour ne pas décaler les coordonnées.
+    """
+    w, h = img.size
+    pad_w = (multiple - w % multiple) % multiple
+    pad_h = (multiple - h % multiple) % multiple
+    if pad_w > 0 or pad_h > 0:
+        img = tf_pad(img, (0, 0, pad_w, pad_h), padding_mode='reflect')
+    return img
+
 
 
 def select_validation_samples(val_dataset, n_per_degradation: int = 2,
@@ -43,8 +58,12 @@ def select_validation_samples(val_dataset, n_per_degradation: int = 2,
                             replace=False)
         for i in chosen:
             pair = pairs[int(i)]
-            clean = np.array(Image.open(pair["clean"]).convert("RGB"))
-            degraded = np.array(Image.open(pair["img"]).convert("RGB"))
+            clean = Image.open(pair["clean"]).convert("RGB")
+            degraded = Image.open(pair["img"]).convert("RGB")
+            # Padding pour être divisible par 16 (prérequis pour MoCE-IR),
+            # cohérent avec le loader d'entraînement.
+            clean = _pad_to_multiple(clean, multiple=16)
+            degraded = _pad_to_multiple(degraded, multiple=16)
             name = Path(pair["clean"]).stem
             samples.append({
                 "name": f"{task}_{name}_{int(i)}",
