@@ -27,6 +27,10 @@ except ImportError:
 from src.baselines.moce_ir import MoceIrBaseline
 from src.datasets.moce_ir_loader import MoCEIRDataset
 from src.training.trainer import Trainer
+from src.visualization.training_samples import (
+    select_validation_samples,
+    save_epoch_samples,
+)
 
 
 def load_yaml(path: str) -> dict:
@@ -86,6 +90,10 @@ def main():
     parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
     parser.add_argument("--patch_size", type=int, default=128, help="Taille des crops MoCE-IR (128 comme l'officiel)")
     parser.add_argument("--no_wandb", action="store_true", help="Désactive le suivi wandb")
+    parser.add_argument("--samples_per_degradation", type=int, default=2,
+                        help="Nombre d'images du val set à suivre par dégradation (défaut: 2)")
+    parser.add_argument("--no_samples", action="store_true",
+                        help="Désactive la sauvegarde des échantillons visuels par époque")
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -111,6 +119,18 @@ def main():
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=4, pin_memory=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True)
+
+    # Sélection des échantillons visuels fixes (2 par dégradation) depuis le val set.
+    # Ces images seront dégradées et restaurées à chaque époque pour suivre la progression.
+    samples = None
+    if not args.no_samples:
+        samples = select_validation_samples(
+            val_dataset,
+            n_per_degradation=args.samples_per_degradation,
+            seed=training_cfg.get("seed", 42),
+        )
+        print(f"{len(samples)} échantillons visuels sélectionnés dans le val set "
+              f"({args.samples_per_degradation} par dégradation)")
 
     # 3. Initialiser le modèle
     if args.baseline == "moce_ir":
@@ -161,6 +181,11 @@ def main():
                 "val/loss": val_loss,
                 "lr": optimizer.param_groups[0]["lr"],
             })
+
+        # Sauvegarde des échantillons visuels (dégradés + restaurés) à chaque époque
+        if samples is not None:
+            save_epoch_samples(model, samples, epoch=epoch,
+                               output_dir="outputs/figures", device=device)
 
         # Sauvegarde
         if val_loss < best_val_loss:
