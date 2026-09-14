@@ -164,6 +164,10 @@ def main():
     for epoch in range(1, args.epochs + 1):
         print(f"\n--- Epoch {epoch}/{args.epochs} ---")
 
+        # Informe le trainer du nombre d'époques restantes pour l'ETA
+        trainer.remaining_epochs = args.epochs - epoch
+        trainer.start_epoch()
+
         train_loss = trainer.train_one_epoch(train_loader, epoch=epoch)
         print(f"Train Loss: {train_loss:.4f}")
 
@@ -172,15 +176,23 @@ def main():
 
         scheduler.step()
 
+        # Estimation du temps restant (ETA)
+        eta_seconds = trainer.end_epoch()
+        if eta_seconds is not None:
+            print(f"ETA: {trainer._format_eta(eta_seconds)} restant")
+
         # Log des métriques par époque
         if use_wandb:
             import wandb
-            wandb.log({
+            log_dict = {
                 "epoch": epoch,
                 "train/loss": train_loss,
                 "val/loss": val_loss,
                 "lr": optimizer.param_groups[0]["lr"],
-            })
+            }
+            if eta_seconds is not None:
+                log_dict["eta_seconds"] = eta_seconds
+            wandb.log(log_dict)
 
         # Sauvegarde des échantillons visuels (dégradés + restaurés) à chaque époque
         if samples is not None:

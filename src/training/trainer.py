@@ -3,7 +3,10 @@
 Hyperparamètres dans configs/training.yaml.
 """
 
+import time
+
 import torch
+from tqdm import tqdm
 
 
 class Trainer:
@@ -31,6 +34,10 @@ class Trainer:
 
         self.model.to(self.device)
 
+        # Suivi du temps pour l'estimation du temps restant (ETA).
+        self.epoch_times = []          # durée de chaque époque (train + val)
+        self._epoch_start = None       # timestamp de début de l'époque courante
+
     @staticmethod
     def _unpack(batch):
         """Accepte (meta, degraded, clean) (MoCE-IR officiel) ou (degraded, clean)."""
@@ -51,11 +58,59 @@ class Trainer:
             return model.model.total_loss
         return 0.0
 
+    @staticmethod
+    def _format_eta(seconds: float) -> str:
+        """Formate une durée en secondes en 'Xh Ym Zs'."""
+        seconds = max(0, int(seconds))
+        h, rem = divmod(seconds, 3600)
+        m, s = divmod(rem, 60)
+        if h > 0:
+            return f"{h}h {m:02d}m {s:02d}s"
+        if m > 0:
+            return f"{m}m {s:02d}s"
+        return f"{s}s"
+
+    def start_epoch(self):
+        """Marque le début d'une époque pour mesurer sa durée."""
+        self._epoch_start = time.time()
+
+    def end_epoch(self):
+        """Enregistre la durée de l'époque terminée et retourne l'ETA restant.
+
+        Retourne le temps restant estimé (en secondes) pour la fin de
+        l'entraînement, ou None si pas assez d'époques pour estimer.
+        """
+        if self._epoch_start is None:
+            return None
+        elapsed = time.time() - self._epoch_start
+        self.epoch_times.append(elapsed)
+        self._epoch_start = None
+        return self.eta()
+
+    def eta(self) -> float | None:
+        """Estime le temps restant (s) en supposant un rythme constant par époque."""
+        if not self.epoch_times:
+            return None
+        avg_epoch = sum(self.epoch_times) / len(self.epoch_times)
+        return avg_epoch * self.remaining_epochs
+
+    @property
+    def remaining_epochs(self) -> int:
+        """Nombre d'époques restantes (mis à jour par le script d'entraînement)."""
+        return getattr(self, "_remaining_epochs", 0)
+
+    @remaining_epochs.setter
+    def remaining_epochs(self, value: int):
+        self._remaining_epochs = value
+
     def train_one_epoch(self, dataloader, epoch: int = 0):
         self.model.train()
         total_loss = 0.0
 
-        for batch_idx, batch in enumerate(dataloader):
+        # Barre de progression par époque (format tqdm : Epoch 3: 45%|██▌| 450/1000 [02:15<02:45, 3.33it/s])
+        pbar = tqdm(dataloader, desc=f"Epoch {epoch}", unit="it",
+                    dynamic_ncols=True, leave=False)
+        for batch_idx, batch in enumerate(pbar):
             degraded, clean = self._unpack(batch)
             degraded = degraded.to(self.device)
             clean = clean.to(self.device)
@@ -80,21 +135,22 @@ class Trainer:
 
             total_loss += loss.item()
 
-            if batch_idx % self.log_interval == 0:
-                msg = f"Epoch {epoch} Batch {batch_idx}/{len(dataloader)} - Loss: {loss.item():.4f}"
-                print(msg)
-                if self.use_wandb:
-                    try:
-                        import wandb
-                        wandb.log({
-                            "train/batch_loss": loss.item(),
-                            "train/batch_main_loss": main_loss.item(),
-                            "train/batch_aux_loss": aux_loss.item() if torch.is_tensor(aux_loss) else aux_loss,
-                            "train/batch": epoch * len(dataloader) + batch_idx,
-                        })
-                    except ImportError:
-                        pass
+            # Mise à jour de la barre avec la loss courante
+            pbar.set_postfix(loss=f"{loss.item():.4f}")
 
+            if batch_idx % self.log_interval == 0 and self.use_wandb:
+                try:
+                    import wandb
+                    wandb.log({
+                        "train/batch_loss": loss.item(),
+                        "train/batch_main_loss": main_loss.item(),
+                        "train/batch_aux_loss": aux_loss.item() if torch.is_tensor(aux_loss) else aux_loss,
+                        "train/batch": epoch * len(dataloader) + batch_idx,
+                    })
+                except ImportError:
+                    pass
+
+        pbar.close()
         return total_loss / len(dataloader)
 
     @torch.no_grad()
@@ -102,7 +158,9 @@ class Trainer:
         self.model.eval()
         total_loss = 0.0
 
-        for batch_idx, batch in enumerate(dataloader):
+        pbar = tqdm(dataloader, desc="Val", unit="it",
+                    dynamic_ncols=True, leave=False)
+        for batch_idx, batch in enumerate(pbar):
             degraded, clean = self._unpack(batch)
             degraded = degraded.to(self.device)
             clean = clean.to(self.device)
@@ -112,4 +170,5 @@ class Trainer:
             loss = self.loss_fn(output, clean)
             total_loss += loss.item()
 
+        pbar.close()
         return total_loss / len(dataloader)
