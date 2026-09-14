@@ -18,3 +18,5 @@ kagglehub
 gdown
 lpips
 ultralytics
+wandb
+python-dotenv

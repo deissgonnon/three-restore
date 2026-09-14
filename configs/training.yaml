@@ -11,3 +11,14 @@ num_workers: 4
 device: "cuda"
 checkpoint_every_n_epochs: 5
 seed: 42
+
+# Suivi des expériences avec Weights & Biases
+wandb:
+  enabled: true
+  project: "DEP-RNet"
+  entity: null            # optionnel : nom de l'équipe/compte wandb
+  name: null              # optionnel : nom du run (sinon auto-généré)
+  api_key: null           # optionnel : clé API wandb pour authentification automatique
+                          # (ou définir la variable d'env WANDB_API_KEY)
+  log_interval: 10        # log toutes les N itérations (batchs)
+  save_code: true
