@@ -5,6 +5,7 @@ data/synthetic v2/
 data/real_lowlight_test/
 data/splits/
 data/preprocessing_cache/
+data/yolo_labels/
 
 # Sorties d'entraînement
 outputs/
@@ -27,6 +28,7 @@ venv/
 
 # Notebooks checkpoints
 .ipynb_checkpoints/
+*.pt
 
 # OS
 .DS_Store

@@ -20,7 +20,7 @@ dep-rnet/
 │   │   ├── restoration/   # Main restoration network (DEP-RNet)
 │   │   ├── dep_branch/    # Lightweight detection evidence preservation branch
 │   │   └── losses/        # SOD loss (Scale-aware Object Detail) + classic losses
-│   ├── detection/      # Fixed detector wrapper (YOLO) + mAP metrics computation
+│   ├── detection/      # Common interface + factory (YOLO, RT-DETR) + mAP metrics
 │   ├── training/       # Training loop, checkpointing
 │   ├── evaluation/     # Restoration metrics (PSNR/SSIM/LPIPS) + joint evaluation
 │   ├── baselines/      # Wrappers for AirNet, PromptIR, MoCE-IR, Restormer, etc.
@@ -126,6 +126,39 @@ python scripts/train.py --baseline moce_ir --batch_size 4 --epochs 100 --lr 0.00
 ```
 
 Model-specific hyperparameters are located in `configs/baselines.yaml`. The DataLoader (`MixedDegradationDataset`) will automatically pick randomly among the degradations (`fog`, `rain`, `lowlight`) without altering the geometry of the image (bounding boxes will remain valid).
+
+## Train the fixed detector (YOLO / RT-DETR)
+
+The detector is the FIXED reference for restoration evaluation (clean / degraded / restored). It is driven by `configs/detection.yaml` through a common interface + factory (`src/detection/`): switching model = changing `detector.name` in the config, no code change.
+
+```bash
+python scripts/train_detector.py
+```
+
+Useful options:
+
+```bash
+python scripts/train_detector.py --epochs 50 --batch 32 --model yolov8s.pt
+python scripts/train_detector.py --no_convert   # reuse already-converted labels
+```
+
+| `detector.name` | Model | Example `weights` |
+|---|---|---|
+| `yolo` | YOLO (v8/11/12, backbones n/s/m/l/x) | `yolov8n.pt`, `yolo11s.pt` |
+| `rtdetr` | RT-DETR (via ultralytics) | `rtdetr-l.pt`, `rtdetr-x.pt` |
+
+Example for RT-DETR in `configs/detection.yaml`:
+
+```yaml
+detector:
+  name: "rtdetr"
+  weights: "rtdetr-l.pt"
+training:
+  model: "rtdetr-l.pt"
+  deterministic: false   # RT-DETR requires False on CUDA (non-deterministic grid_sample)
+```
+
+The VisDrone → YOLO conversion is reusable by all models (`src/datasets/visdrone_yolo.py`). Plugins register via `@register("yolo")` / `@register("rtdetr")` in `src/detection/`.
 
 ## Tune low light interactively
 

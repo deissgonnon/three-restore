@@ -22,7 +22,7 @@ dep-rnet/
 │   │   ├── restoration/   # Réseau de restauration principal (DEP-RNet)
 │   │   ├── dep_branch/    # Branche allégée de préservation des preuves de détection
 │   │   └── losses/        # Perte SOD (Scale-aware Object Detail) + pertes classiques
-│   ├── detection/      # Wrapper détecteur fixe (YOLO) + calcul des métriques mAP
+│   ├── detection/      # Interface commune + factory (YOLO, RT-DETR) + métriques mAP
 │   ├── training/       # Boucle d'entraînement, checkpointing
 │   ├── evaluation/     # Métriques de restauration (PSNR/SSIM/LPIPS) + évaluation conjointe
 │   ├── baselines/      # Wrappers pour AirNet, PromptIR, MoCE-IR, Restormer, etc.
@@ -166,3 +166,43 @@ python scripts/train.py --baseline moce_ir --batch_size 4 --epochs 100 --lr 0.00
 ```
 
 Les hyperparamètres spécifiques au modèle se trouvent dans `configs/baselines.yaml`. Le DataLoader (`MixedDegradationDataset`) se chargera automatiquement de piocher aléatoirement parmi les dégradations (`fog`, `rain`, `lowlight`) sans altérer la géométrie de l'image (les boîtes englobantes resteront valides).
+
+## Entraîner le détecteur fixe (YOLO / RT-DETR)
+
+Le détecteur sert de référence FIXE pour l'évaluation du module de restauration
+(image nette / dégradée / restaurée). Il est piloté par `configs/detection.yaml`
+via une interface commune + factory (`src/detection/`) : changer de modèle =
+changer `detector.name` dans la config, sans toucher au code.
+
+```bash
+python scripts/train_detector.py
+```
+
+Options utiles :
+
+```bash
+python scripts/train_detector.py --epochs 50 --batch 32 --model yolov8s.pt
+python scripts/train_detector.py --no_convert   # réutilise les labels déjà convertis
+```
+
+### Changer de modèle
+
+| `detector.name` | Modèle | Exemple de `weights` |
+|---|---|---|
+| `yolo` | YOLO (v8/11/12, backbones n/s/m/l/x) | `yolov8n.pt`, `yolo11s.pt` |
+| `rtdetr` | RT-DETR (via ultralytics) | `rtdetr-l.pt`, `rtdetr-x.pt` |
+
+Exemple pour RT-DETR dans `configs/detection.yaml` :
+
+```yaml
+detector:
+  name: "rtdetr"
+  weights: "rtdetr-l.pt"
+training:
+  model: "rtdetr-l.pt"
+  deterministic: false   # RT-DETR exige False sur CUDA (grid_sample non déterministe)
+```
+
+La conversion VisDrone → YOLO est réutilisable par tous les modèles
+(`src/datasets/visdrone_yolo.py`). Les plugins s'enregistrent via
+`@register("yolo")` / `@register("rtdetr")` dans `src/detection/`.

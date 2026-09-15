@@ -2,10 +2,38 @@
 # afin d'isoler l'effet du module de restauration — voir doc de suivi section 6.4
 
 detector:
-  name: "yolov8"
-  weights: "yolov8n.pt"
+  name: "yolo"                  # "yolo" | "rtdetr"
+  weights: "yolov8n.pt"          # modèle pré-entraîné de départ (ou chemin vers un .pt entraîné)
   confidence_threshold: 0.25
   iou_threshold: 0.45
+
+# Entraînement du détecteur (scripts/train_detector.py)
+training:
+  model: "yolov8n.pt"            # modèle de départ pour l'entraînement 
+  epochs: 100
+  imgsz: 640
+  batch: 32
+  lr0: 0.01
+  optimizer: "auto"
+  patience: 20                   # early stopping
+  seed: 42
+  device: 0                     # GPU id, ou "cpu"
+  workers: 8
+  project: "outputs/checkpoints/detector"
+  # name: "yolov8n_visdrone"   # optionnel — par défaut dérivé du modèle (ex: yolov8s_visdrone)
+  deterministic: null            # RT-DETR exige False sur CUDA (grid_sample non déterministe)
+  # Classes VisDrone (10) — ordre identique au YAML officiel ultralytics
+  class_names:
+    0: pedestrian
+    1: people
+    2: bicycle
+    3: car
+    4: van
+    5: truck
+    6: tricycle
+    7: awning-tricycle
+    8: bus
+    9: motor
 
 metrics:
   - mAP50
