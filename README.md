@@ -205,4 +205,4 @@ training:
 
 La conversion VisDrone → YOLO est réutilisable par tous les modèles
 (`src/datasets/visdrone_yolo.py`). Les plugins s'enregistrent via
-`@register("yolo")` / `@register("rtdetr")` dans `src/detection/`.
+`@register("yolo")` / `@register("rtdetr")` dans `src/detection/`..
