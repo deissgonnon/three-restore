@@ -22,7 +22,7 @@ for split in SPLITS:
 total_jour = sum(s[1] for s in stats)
 total_nuit = sum(s[2] for s in stats)
 
-print(f"{'split':<8}{'jour':>8}{'nuit':>8}{'total':>8}{'% nuit':>10}")
+print(f"{'split':<8}{'Day':>8}{'Night':>8}{'total':>8}{'% Night':>10}")
 print("-" * 42)
 for split, n_jour, n_nuit in stats:
     total = n_jour + n_nuit
