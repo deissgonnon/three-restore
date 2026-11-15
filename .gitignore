@@ -24,3 +24,4 @@ venv/
 # Figures générées par les scripts
 scripts/degradation_*.png
 scripts/results/
+*.cache
