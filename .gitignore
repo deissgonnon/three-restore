@@ -1,48 +1,26 @@
-# Données (trop volumineuses pour git, sauf splits/)
-data/raw/
-data/synthetic/
-data/synthetic-v2/
-data/real_lowlight_test/
-data/restored/
-data/eval_sets/
-data/examples_*.png
-data/splits/
+# Caches / gros fichiers générés
 data/preprocessing_cache/
-data/yolo_labels/
-
-# Sorties d'entraînement
-outputs/
-logs/
-experiments/*/
-!experiments/.gitkeep
+data/raw/visdrone/VisDrone_DET_annotations_analysis.csv
 wandb/
 
 # Secrets
-configs/secrets.yaml
 .env
 
-# Python
-__pycache__/
-*.pyc
-.pytest_cache/
-*.egg-info/
-.venv/
-venv/
-
-# Notebooks checkpoints
-.ipynb_checkpoints/
-*.pt
-
-# OS
-.DS_Store
-
-# ssh
+# Fichiers locaux / junk
+nohup.out
+vscode_cli.tar.gz
 code
 ssh.ipynb
 ssh-ME.ipynb
-vscode_cli.tar.gz
+.ipynb_checkpoints/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.egg-info
+.venv/
+venv/
+.DS_Store
 
-# Sorties de scripts / figures générées
-scripts/results/
+# Figures générées par les scripts
 scripts/degradation_*.png
-nohup.out
+scripts/results/

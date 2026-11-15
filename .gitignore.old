@@ -1,0 +1,48 @@
+# Données (trop volumineuses pour git, sauf splits/)
+data/raw/
+data/synthetic/
+data/synthetic-v2/
+data/real_lowlight_test/
+data/restored/
+data/eval_sets/
+data/examples_*.png
+data/splits/
+data/preprocessing_cache/
+data/yolo_labels/
+
+# Sorties d'entraînement
+outputs/
+logs/
+experiments/*/
+!experiments/.gitkeep
+wandb/
+
+# Secrets
+configs/secrets.yaml
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+*.pt
+
+# OS
+.DS_Store
+
+# ssh
+code
+ssh.ipynb
+ssh-ME.ipynb
+vscode_cli.tar.gz
+
+# Sorties de scripts / figures générées
+scripts/results/
+scripts/degradation_*.png
+nohup.out
