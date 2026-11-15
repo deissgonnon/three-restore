@@ -1,0 +1,26 @@
+Baseline: moce_ir | device: cuda | poids: /workspace/202427000031/DEP-RNet/outputs/best_moce_ir.pth
+
+=== Métriques modèle ===
+Paramètres : 25,353,796
+FLOPs (256x256) : 92.26 G
+Temps inférence (256x256) : 84.3 ms
+
+=== Évaluation sur test (/workspace/202427000031/DEP-RNet/data/splits/test/images) ===
+
+--- fog ---
+  PSNR: 16.4249
+  SSIM: 0.7761
+  LPIPS: 0.1591
+  inference_time_s: 1.4356
+
+--- rain ---
+  PSNR: 31.5232
+  SSIM: 0.9387
+  LPIPS: 0.0479
+  inference_time_s: 1.4372
+
+--- lowlight ---
+  PSNR: 23.6597
+  SSIM: 0.7672
+  LPIPS: 0.1814
+  inference_time_s: 1.4345

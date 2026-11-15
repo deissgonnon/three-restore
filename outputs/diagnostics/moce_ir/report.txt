@@ -1,0 +1,46 @@
+======================================================================
+DIAGNOSTIC MoCE-IR — de l'entrée à la sortie
+======================================================================
+
+[1] STATISTIQUES ENTRÉE / SORTIE
+  Entrée  : min=0.5961 max=0.9529 mean=0.7611 std=0.0425 |abs|=0.7611
+  Sortie  : min=0.0717 max=1.0048 mean=0.4470 std=0.1469 |abs|=0.4470
+  Claire  : min=0.0000 max=1.0000 mean=0.4517 std=0.1695 |abs|=0.4517
+
+[2] ANALYSE SPECTRALE (FFT)
+  Entrée: low_freq_frac=0.0016 rms=0.0398
+  Sortie: low_freq_frac=0.0011 rms=0.1425
+  Claire : low_freq_frac=0.0012 rms=0.1650
+
+[3] ACTIVATIONS INTERMÉDIAIRES
+  patch_embed              (1, 48, 128, 128) min=-2.4024 max=2.2876 mean=0.0274 std=0.6002 |abs|=0.4273
+  enc_0_block              (1, 48, 128, 128) min=-1.7479 max=1.9007 mean=0.0151 std=0.3138 |abs|=0.1385
+  enc_0_downsample         (1, 96, 64, 64)  min=-3.5937 max=3.2600 mean=0.0712 std=0.7852 |abs|=0.5524
+  enc_1_block              (1, 96, 64, 64)  min=-6.7702 max=7.0523 mean=0.0209 std=0.7831 |abs|=0.5572
+  enc_1_downsample         (1, 192, 32, 32) min=-12.0120 max=12.0631 mean=0.0008 std=1.8012 |abs|=1.3445
+  enc_2_block              (1, 192, 32, 32) min=-10.6179 max=13.0704 mean=-0.0004 std=1.5900 |abs|=1.1888
+  enc_2_downsample         (1, 384, 16, 16) min=-16.7177 max=16.4286 mean=-0.1065 std=3.0556 |abs|=2.3205
+  latent                   (1, 384, 16, 16) min=-14.6014 max=15.4946 mean=-0.0962 std=2.8803 |abs|=2.2348
+  dec_0_upsample           (1, 192, 32, 32) min=-49.6978 max=58.0416 mean=0.1354 std=8.9804 |abs|=6.9507
+  dec_0_fusion             (1, 192, 32, 32) min=-19.7795 max=27.7651 mean=-0.0123 std=2.2398 |abs|=1.7028
+  dec_0_block              (1, 192, 32, 32) min=-19.4435 max=27.7132 mean=-0.0049 std=2.0947 |abs|=1.5914
+  dec_1_upsample           (1, 96, 64, 64)  min=-27.3791 max=31.0521 mean=0.0723 std=3.7295 |abs|=2.8221
+  dec_1_fusion             (1, 96, 64, 64)  min=-7.2550 max=7.9976 mean=-0.0337 std=0.9650 |abs|=0.7255
+  dec_1_block              (1, 96, 64, 64)  min=-8.3304 max=7.3521 mean=-0.0233 std=1.1243 |abs|=0.8521
+  dec_2_upsample           (1, 48, 128, 128) min=-10.5085 max=9.2346 mean=-0.0187 std=1.0351 |abs|=0.7213
+  dec_2_fusion             (1, 48, 128, 128) min=-1.5202 max=1.4494 mean=0.0142 std=0.2849 |abs|=0.2139
+  dec_2_block              (1, 48, 128, 128) min=-1.5362 max=1.5151 mean=0.0161 std=0.2998 |abs|=0.2260
+  refinement               (1, 48, 128, 128) min=-2.1233 max=2.4392 mean=-0.0208 std=0.3002 |abs|=0.1743
+  output                   (1, 3, 128, 128) min=-0.5391 max=0.0640 mean=-0.3142 std=0.1086 |abs|=0.3151
+
+[4] ROUTAGE DES EXPERTS (gates par étage du décodeur)
+  dec_0_block_0_adapter        gates=[0.  0.3 0.  0. ] -> E1(0.300)
+  dec_0_block_1_adapter        gates=[0.    0.    0.    0.292] -> E3(0.292)
+  dec_0_block_2_adapter        gates=[0.    0.    0.    0.356] -> E3(0.356)
+  dec_0_block_3_adapter        gates=[0.    0.    0.352 0.   ] -> E2(0.352)
+  dec_1_block_0_adapter        gates=[0.    0.    0.355 0.   ] -> E2(0.355)
+  dec_1_block_1_adapter        gates=[0.313 0.    0.    0.   ] -> E0(0.313)
+  dec_1_block_2_adapter        gates=[0.    0.338 0.    0.   ] -> E1(0.338)
+  dec_1_block_3_adapter        gates=[0.    0.    0.325 0.   ] -> E2(0.325)
+  dec_2_block_0_adapter        gates=[0.317 0.    0.    0.   ] -> E0(0.317)
+  dec_2_block_1_adapter        gates=[0.33 0.   0.   0.  ] -> E0(0.330)

@@ -1,0 +1,7 @@
+method,degradation,PSNR,SSIM,LPIPS,mAP50,mAP50:95,AP-vehicle,AP-pedestrian
+Degraded input,fog,10.427,0.6265,0.3633,0.2887,0.1719,0.3132,0.1909
+Baseline 1 (MoCE-IR),fog,16.4478,0.7744,0.2245,0.3114,0.1856,0.3392,0.2006
+Degraded input,rain,18.13,0.8219,0.189,0.3751,0.2245,0.4089,0.2396
+Baseline 1 (MoCE-IR),rain,31.4105,0.9366,0.0741,0.3987,0.2398,0.4349,0.2538
+Degraded input,low-light,11.4167,0.2999,0.5758,0.2613,0.1543,0.2884,0.1526
+Baseline 1 (MoCE-IR),low-light,23.8503,0.771,0.2646,0.3545,0.2103,0.3823,0.2432
