@@ -1,0 +1,51 @@
+{
+    "dataset": "VisDrone-DET",
+    "splits": [
+        {
+            "split": "train",
+            "images": 6471,
+            "objects": 343205,
+            "objects_per_image": 53.037397620151445
+        },
+        {
+            "split": "val",
+            "images": 548,
+            "objects": 38759,
+            "objects_per_image": 70.72810218978103
+        },
+        {
+            "split": "test-dev",
+            "images": 1580,
+            "objects": 0,
+            "objects_per_image": 0.0
+        }
+    ],
+    "total_images": 8599,
+    "total_objects": 381964,
+    "num_classes": 10,
+    "class_distribution": {
+        "car": 158931,
+        "pedestrian": 88181,
+        "motor": 34533,
+        "people": 32184,
+        "van": 26931,
+        "truck": 13625,
+        "bicycle": 11767,
+        "bus": 6177,
+        "tricycle": 5857,
+        "awning-tricycle": 3778
+    },
+    "mean_objects_per_image": 54.41857814503491,
+    "mean_bbox_width": 37.82969075619692,
+    "mean_bbox_height": 36.790187033332984,
+    "mean_relative_area": 0.001534926668169984,
+    "occlusion_distribution": {
+        "0": 184114,
+        "1": 161112,
+        "2": 36738
+    },
+    "truncation_distribution": {
+        "0": 367119,
+        "1": 14845
+    }
+}

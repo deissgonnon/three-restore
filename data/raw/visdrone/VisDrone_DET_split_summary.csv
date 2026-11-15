@@ -1,0 +1,4 @@
+split,images,objects,objects_per_image
+train,6471,343205,53.037397620151445
+val,548,38759,70.72810218978103
+test-dev,1580,0,0.0
